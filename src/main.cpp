@@ -39,7 +39,7 @@ Arguments parse_args(int argc, char *argv[]) {
     } else if (arg == "--rule") {
         args.change_rule_size = true;
     }  else if (arg == "--n" && i + 1 < argc) {
-        args.num_experiments = size_t(argv[i + 1]);
+        args.num_experiments = atoi(argv[i + 1]);
         ++i; // Skip the next argument (file path)
     }
   }
@@ -71,6 +71,10 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         exit(1);
     }
+
+    std::cout << "random?: " << args.random << std::endl;
+    std::cout << "rule?:   " << args.change_rule_size << std::endl;
+    std::cout << "num exp: " << args.num_experiments << std::endl;
 
     outdata << "[";
 
