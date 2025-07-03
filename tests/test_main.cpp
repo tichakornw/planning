@@ -1,5 +1,6 @@
 #include <cassert>
 #include <vector>
+#include <set>
 
 #include "Graph.h"
 #include "OptimalSet.h"
@@ -7,6 +8,36 @@
 #include "Rulebook.h"
 #include "RulebookCost.h"
 #include "WeightedGraph.h"
+
+
+bool checkTopologicalSort(const Graph& graph, const std::vector<size_t>& sorted_vertices) {
+    // Build a map from vertex ID to its index in the sorted list
+    std::unordered_map<size_t, size_t> vertex_order;
+    for (size_t i = 0; i < sorted_vertices.size(); ++i) {
+        vertex_order[sorted_vertices[i]] = i;
+    }
+
+    // Ensure that each edge's source comes before its destination
+    for (const auto& edge : graph.getEdges()) {
+        size_t from_id = edge->from->vid;
+        size_t to_id = edge->to->vid;
+
+        if (vertex_order[from_id] >= vertex_order[to_id]) {
+            std::cerr << "Invalid topological sort: "
+                      << from_id << " appears after " << to_id << std::endl;
+            return false;
+        }
+    }
+
+    // Check that sort includes all vertices
+    if (sorted_vertices.size() != graph.getNumVertices()) {
+        std::cerr << "Incorrect size: " << sorted_vertices.size() << " vs " << graph.getNumVertices()
+                  << std::endl;
+        return false;
+    }
+
+    return true;
+}
 
 void testGraph() {
     Graph graph;
@@ -29,12 +60,9 @@ void testGraph() {
     // Display the graph
     graph.display();
 
-    const auto sortedVertices = graph.topologicalSort();
-    std::cout << "  Topological Sorting Order: ";
-    for (const auto &vertex : sortedVertices) {
-        std::cout << vertex << " ";
-    }
-    std::cout << std::endl;
+    const auto sorted_vertices = graph.topologicalSort();
+
+    assert(checkTopologicalSort(graph, sorted_vertices));
 }
 
 void testWeightedGraph() {
@@ -58,12 +86,9 @@ void testWeightedGraph() {
     // Display the graph
     graph.display();
 
-    const auto sortedVertices = graph.topologicalSort();
-    std::cout << "  Topological Sorting Order: ";
-    for (const auto &vertex : sortedVertices) {
-        std::cout << vertex << " ";
-    }
-    std::cout << std::endl;
+    const auto sorted_vertices = graph.topologicalSort();
+
+    assert(checkTopologicalSort(graph, sorted_vertices));
 }
 
 Rulebook testRulebook() {
@@ -147,6 +172,55 @@ void testOptimalSet() {
     std::cout << optimalSet << std::endl;
 }
 
+void testSubgraph() {
+    WeightedGraph<double> graph;
+
+    // Add vertices
+    graph.addVertex(1);
+    graph.addVertex(2);
+    graph.addVertex(3);
+    graph.addVertex(4);
+    graph.addVertex(5);
+    graph.addVertex(6);
+
+    // Add edges with costs
+    graph.addEdge(1, 2, 1, 1);
+    graph.addEdge(2, 3, 2, 2);
+    graph.addEdge(1, 4, 2, 3);
+    graph.addEdge(4, 3, 2, 4);
+    graph.addEdge(1, 5, 1, 5);
+    graph.addEdge(5, 6, 1, 6);
+    graph.addEdge(6, 3, 1, 7);
+
+    // Display the graph
+    std::cout << "Graph:" << std::endl;
+    graph.display();
+
+    graph.reduceToOptimalSubgraph<double>(1, 3, false);
+    std::cout << "Optimal subgraph:" << std::endl;
+    graph.display();
+    assert(graph.is_consistent());
+
+    // Define the expected edges after reduction
+    std::set<std::tuple<size_t, size_t, double, size_t>> expected_edges = {
+        {1, 2, 1, 1},
+        {2, 3, 2, 2},
+        {1, 5, 1, 5},
+        {5, 6, 1, 6},
+        {6, 3, 1, 7},
+    };
+
+    // Check that actual edges match expected
+    std::set<std::tuple<size_t, size_t, double, size_t>> actual_edges;
+    for (const auto& edge : graph.getEdges()) {
+        auto wedge = std::dynamic_pointer_cast<WeightedEdge<double>>(edge);
+        assert(wedge); // all edges must be WeightedEdge
+        actual_edges.insert({wedge->from->vid, wedge->to->vid, wedge->cost, wedge->eid});
+    }
+
+    assert(actual_edges == expected_edges);
+}
+
 void testSearch() {
     Rulebook rulebook;
 
@@ -206,6 +280,9 @@ int main() {
     std::cout << std::endl;
     std::cout << "Testing OptimalSet ..." << std::endl;
     testOptimalSet();
+    std::cout << std::endl;
+    std::cout << "Testing Subgraph ..." << std::endl;
+    testSubgraph();
     std::cout << std::endl;
     std::cout << "Testing Search ..." << std::endl;
     testSearch();

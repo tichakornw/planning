@@ -29,10 +29,22 @@ class Graph {
         }
     }
 
-    std::shared_ptr<Vertex> getVertex(size_t vid) const {
+    void RemoveEdge(const std::shared_ptr<Edge>& edge) {
+        // Remove from top-level edges
+        edges.erase(std::remove(edges.begin(), edges.end(), edge), edges.end());
+        RemoveEdgeFromVertices(edge);
+    }
+
+
+    const std::shared_ptr<Vertex> getVertex(size_t vid) const {
         auto it = vertices.find(vid);
         return it != vertices.end() ? it->second : nullptr;
     }
+
+    const std::vector<std::shared_ptr<Edge>>& getEdges() const {
+        return edges;
+    }
+
 
     size_t getNumVertices() const { return vertices.size(); }
 
@@ -107,6 +119,54 @@ class Graph {
         }
     }
 
+    // Check that the edges and those contained in vertices are consistent
+    bool is_consistent() const {
+        // Check that all edges in graph.edges are also in from->out_edges and to->in_edges
+        for (const auto& edge : edges) {
+            auto from = edge->from;
+            auto to = edge->to;
+
+            if (!from || !to) {
+                std::cerr << "Edge has null endpoint.\n";
+                return false;
+            }
+
+            // Check if edge is in from->out_edges
+            const auto& out_edges = from->out_edges;
+            if (std::find(out_edges.begin(), out_edges.end(), edge) == out_edges.end()) {
+                std::cerr << "Edge from " << from->vid << " to " << to->vid
+                          << " missing from from->out_edges.\n";
+                return false;
+            }
+
+            // Check if edge is in to->in_edges
+            const auto& in_edges = to->in_edges;
+            if (std::find(in_edges.begin(), in_edges.end(), edge) == in_edges.end()) {
+                std::cerr << "Edge from " << from->vid << " to " << to->vid
+                          << " missing from to->in_edges.\n";
+                return false;
+            }
+        }
+
+        // Check that all vertex->in_edges and out_edges exist in graph.edges
+        for (const auto& [vid, vertex] : vertices) {
+            for (const auto& edge : vertex->out_edges) {
+                if (std::find(edges.begin(), edges.end(), edge) == edges.end()) {
+                    std::cerr << "Edge in vertex " << vid << " out_edges not found in graph.edges.\n";
+                    return false;
+                }
+            }
+
+            for (const auto& edge : vertex->in_edges) {
+                if (std::find(edges.begin(), edges.end(), edge) == edges.end()) {
+                    std::cerr << "Edge in vertex " << vid << " in_edges not found in graph.edges.\n";
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
   protected:
     std::unordered_map<size_t, std::shared_ptr<Vertex>> vertices;
     std::vector<std::shared_ptr<Edge>> edges;
@@ -121,6 +181,14 @@ class Graph {
         v1->addOutEdge(edge);
         v2->addInEdge(edge);
         edges.push_back(edge);
+    }
+
+    void RemoveEdgeFromVertices(const std::shared_ptr<Edge>& edge) {
+        auto& out_vec = edge->from->out_edges;
+        out_vec.erase(std::remove(out_vec.begin(), out_vec.end(), edge), out_vec.end());
+
+        auto& in_vec = edge->to->in_edges;
+        in_vec.erase(std::remove(in_vec.begin(), in_vec.end(), edge), in_vec.end());
     }
 
     void topologicalSortUtil(

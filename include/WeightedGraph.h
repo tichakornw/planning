@@ -6,6 +6,8 @@
 #include <memory>
 #include <unordered_set>
 #include <vector>
+#include <limits>
+#include <functional>
 
 template <typename CostType> class WeightedEdge : public Edge {
   public:
@@ -75,6 +77,86 @@ template <typename CostType> class WeightedGraph : public Graph {
             }
             std::cout << "]" << std::endl;
         }
+    }
+
+    // To call the following function, do
+    // graph.reduceToOptimalSubgraph<double>(0, 5,
+    // [](const WEdgePtr& wedge) {
+    //    auto wedge0 = std::dynamic_pointer_cast<WEdge>(wedge);
+    //    return wedge0->cost * 1.2; // e.g., inflated cost
+    //});
+
+    template<
+        typename SubCostType = CostType,
+        typename GetSubCost = std::function<SubCostType(const WEdgePtr&)>
+    >
+    void
+    reduceToOptimalSubgraph(size_t from, size_t to,
+                            bool use_max,
+                            GetSubCost getSubCost = [](const WEdgePtr& wedge) {
+                                auto wedge0 = std::dynamic_pointer_cast<WEdge>(wedge);
+                                return wedge0->cost;
+                            }) {
+        const auto vI = getVertex(from);
+        const auto vG = getVertex(to);
+        if (!vI || !vG)
+            throw std::invalid_argument("Invalid initial or goal vertex");
+
+        const auto cost_to_come = this->getCostToComeFrom<SubCostType>(vI, use_max, false, getSubCost);
+        std::cout << "cost to go" << std::endl;
+        const auto cost_to_go = this->getCostToComeFrom<SubCostType>(vG, use_max, true, getSubCost);
+
+        const auto optimal_cost = cost_to_come.at(to);
+
+        std::cout << "Optimal cost: " << optimal_cost << std::endl;
+
+        // Determine whether a given edge is part of optimal subgraph
+        auto is_edge_optimal = [&](const WEdgePtr& wedge) {
+            size_t from_id = wedge->from->vid;
+            size_t to_id = wedge->to->vid;
+            SubCostType total;
+            if (use_max)
+                total = std::max({cost_to_come.at(from_id), wedge->cost, cost_to_go.at(to_id)});
+            else
+                total = cost_to_come.at(from_id) + wedge->cost + cost_to_go.at(to_id);
+
+            return total < optimal_cost + 1e-6;
+        };
+
+        // Remove edges
+        auto it = std::remove_if(edges.begin(), edges.end(), [&](const std::shared_ptr<Edge>& edge) {
+            const auto wedge = std::dynamic_pointer_cast<WEdge>(edge);
+            if (!wedge) return false;
+
+            if (is_edge_optimal(wedge)) return false;
+
+            // Remove from vertices as a side effect
+            RemoveEdgeFromVertices(edge);  // removes from from->out_edges and to->in_edges
+            return true;       // mark for removal from top-level `edges`
+        });
+
+        edges.erase(it, edges.end());
+
+        /*
+        auto it = std::remove_if(edges.begin(), edges.end(), [&](const std::shared_ptr<Edge>& edge) {
+            const auto wedge = std::dynamic_pointer_cast<WEdge>(edge);
+            if (!wedge)
+                return false;
+            if (is_edge_optimal(wedge))
+                return false;
+
+            // Remove from vertex->out_edges and in_edges
+            auto& out_vec = wedge->from->out_edges;
+            out_vec.erase(std::remove(out_vec.begin(), out_vec.end(), wedge), out_vec.end());
+
+            auto& in_vec = wedge->to->in_edges;
+            in_vec.erase(std::remove(in_vec.begin(), in_vec.end(), wedge), in_vec.end());
+
+            return true;  // mark for removal from top-level `edges`
+        });
+
+        edges.erase(it, edges.end());
+        */
     }
 
     OptimalSet<std::vector<WEdgePtr>, CostType>
@@ -164,6 +246,55 @@ template <typename CostType> class WeightedGraph : public Graph {
         // Swap the new queue with the original queue
         Q.swap(newQueue);
     }
+
+    template<typename SubCostType>
+    std::unordered_map<size_t, SubCostType>
+    getCostToComeFrom(const VertexPtr vI,
+                      bool use_max,
+                      bool reverse_graph,
+                      std::function<SubCostType(const WEdgePtr&)> getSubCost) const {
+        std::unordered_map<size_t, SubCostType> cost_to_come;
+
+        // Initialize all costs to "infinity"
+        SubCostType INF = std::numeric_limits<SubCostType>::max();
+        for (const auto &pair : vertices) {
+            cost_to_come[pair.first] = INF;
+        }
+
+        // Dijkstra queue: (cost, vertex ID)
+        using QElem = std::pair<SubCostType, VertexPtr>;
+        std::priority_queue<QElem, std::vector<QElem>, std::greater<>> pq;
+
+        cost_to_come[vI->vid] = SubCostType{};  // assume SubCostType{} = zero
+        pq.emplace(SubCostType{}, vI);
+
+        while (!pq.empty()) {
+            auto [current_cost, current_vertex] = pq.top();
+            std::cout << "  current_cost " << current_cost << " vertex " << current_vertex->vid << std::endl;
+            pq.pop();
+
+            if (current_cost > cost_to_come[current_vertex->vid])
+                continue;
+
+            const auto& vertex_edges = reverse_graph ? current_vertex->in_edges : current_vertex->out_edges;
+
+            for (const auto &edge : vertex_edges) {
+                const auto wedge = std::dynamic_pointer_cast<WEdge>(edge);
+                const auto next_vertex = reverse_graph ? edge->from : edge->to;
+                std::cout << "    next vertex: " << next_vertex->vid << std::endl;
+                SubCostType edge_cost = getSubCost(wedge);
+                SubCostType new_cost = use_max ? std::max(current_cost, edge_cost) : current_cost + edge_cost;
+
+                if (new_cost < cost_to_come[next_vertex->vid]) {
+                    cost_to_come[next_vertex->vid] = new_cost;
+                    pq.emplace(new_cost, next_vertex);
+                }
+            }
+        }
+
+        return cost_to_come;
+    }
+
 };
 
 #endif
