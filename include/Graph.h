@@ -132,32 +132,97 @@ class Graph {
         return successors;
     }
 
-    // Perform topological sort using DFS
-    [[nodiscard]]
     std::vector<size_t> topologicalSort() const {
-        std::vector<size_t> result;
-        std::unordered_map<std::shared_ptr<Vertex>, bool> visited;
-        std::stack<size_t> stack;
+        std::unordered_map<std::shared_ptr<Vertex>, bool> visited, on_stack;
+        std::unordered_map<size_t, std::shared_ptr<Edge>> parent_edge;
+        std::stack<size_t> topo_stack;
 
-        // Mark all vertices as not visited
-        for (const auto &pair : vertices) {
-            visited[pair.second] = false;
-        }
-
-        // Perform DFS and push vertices to stack in topological order
-        for (const auto &pair : vertices) {
-            if (!visited[pair.second]) {
-                topologicalSortUtil(pair.second, visited, stack);
+        for (const auto& [_, vertex] : vertices) {
+            if (!visited[vertex]) {
+                if (!dfsVisit(vertex, visited, on_stack, parent_edge, &topo_stack))
+                    throw std::runtime_error("Graph contains a cycle; topological sort not possible.");
             }
         }
 
-        // Populate result from stack
-        while (!stack.empty()) {
-            result.push_back(stack.top());
-            stack.pop();
+        std::vector<size_t> result;
+        while (!topo_stack.empty()) {
+            result.push_back(topo_stack.top());
+            topo_stack.pop();
+        }
+        return result;
+    }
+
+    // Compute a path using DFS
+    [[nodiscard]]
+    std::vector<std::shared_ptr<Edge>> getPath(size_t from, size_t to) const {
+        auto vI = getVertex(from);
+        auto vG = getVertex(to);
+        if (!vI || !vG)
+            throw std::invalid_argument("Invalid initial or goal vertex");
+
+        std::unordered_map<std::shared_ptr<Vertex>, bool> visited, on_stack;
+        std::unordered_map<size_t, std::shared_ptr<Edge>> parent_edge;
+
+        // Run DFS from vI
+        dfsVisit(vI, visited, on_stack, parent_edge);
+
+        // Reconstruct path from vG to vI using parent_edge map
+        std::vector<std::shared_ptr<Edge>> path;
+        size_t current = to;
+
+        while (current != from) {
+            if (parent_edge.find(current) == parent_edge.end())
+                return {};  // no path
+            auto edge = parent_edge[current];
+            path.push_back(edge);
+            current = edge->from->vid;
         }
 
-        return result;
+        std::reverse(path.begin(), path.end());
+        return path;
+    }
+
+    // Determine whether the graph is DAG
+    bool isDAG() const {
+        std::unordered_map<std::shared_ptr<Vertex>, bool> visited, on_stack;
+        std::unordered_map<size_t, std::shared_ptr<Edge>> parent_edge;
+        bool has_cycle = false;
+
+        for (const auto& [_, vertex] : vertices) {
+            if (!visited[vertex]) {
+                dfsVisit(vertex, visited, on_stack, parent_edge, nullptr, &has_cycle);
+                if (has_cycle) return false;
+            }
+        }
+        return true;
+    }
+
+    // Determine whether the graph is totally ordered
+    bool isTotallyOrdered() const {
+        // Must be a DAG first
+        if (!isDAG()) return false;
+
+        // Get the topological ordering
+        auto topo = topologicalSort();
+
+        // Ensure there is an edge from each vertex to the next one in topo order
+        for (size_t i = 0; i + 1 < topo.size(); ++i) {
+            auto u = getVertex(topo[i]);
+            auto v = getVertex(topo[i + 1]);
+            bool edge_found = false;
+
+            for (const auto& e : u->out_edges) {
+                if (e->to == v) {
+                    edge_found = true;
+                    break;
+                }
+            }
+
+            if (!edge_found)
+                return false;
+        }
+
+        return true;
     }
 
     // Display the graph
@@ -256,19 +321,33 @@ class Graph {
         edge->clear();
     }
 
-    void topologicalSortUtil(
-        const std::shared_ptr<Vertex> &vertex,
-        std::unordered_map<std::shared_ptr<Vertex>, bool> &visited,
-        std::stack<size_t> &stack) const {
+    // Shared DFS utility for building a parent map, topological order, and detecting cycles
+    bool dfsVisit(
+        const std::shared_ptr<Vertex>& vertex,
+        std::unordered_map<std::shared_ptr<Vertex>, bool>& visited,
+        std::unordered_map<std::shared_ptr<Vertex>, bool>& on_stack,
+        std::unordered_map<size_t, std::shared_ptr<Edge>>& parent_edge,
+        std::stack<size_t>* topo_stack = nullptr,
+        bool* cycle_detected = nullptr) const {
         visited[vertex] = true;
+        on_stack[vertex] = true;
 
-        for (const auto &edge : vertex->out_edges) {
-            if (!visited[edge->to]) {
-                topologicalSortUtil(edge->to, visited, stack);
+        for (const auto& edge : vertex->out_edges) {
+            auto next = edge->to;
+            if (!visited[next]) {
+                parent_edge[next->vid] = edge;
+                if (!dfsVisit(next, visited, on_stack, parent_edge, topo_stack, cycle_detected))
+                    return false;
+            } else if (on_stack[next]) {
+                if (cycle_detected)
+                    *cycle_detected = true;
+                return false;
             }
         }
 
-        stack.push(vertex->vid);
+        on_stack[vertex] = false;
+        if (topo_stack) topo_stack->push(vertex->vid);
+        return true;
     }
 };
 

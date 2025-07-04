@@ -64,6 +64,11 @@ void testGraph() {
     graph.display();
 
     const auto sorted_vertices = graph.topologicalSort();
+    std::cout << "  Topological Sorting Order: ";
+    for (const auto &vertex : sorted_vertices) {
+        std::cout << vertex << " ";
+    }
+    std::cout << std::endl;
 
     assert(checkTopologicalSort(graph, sorted_vertices));
     std::cout << "Done" << std::endl;
@@ -92,9 +97,80 @@ void testWeightedGraph() {
     graph.display();
 
     const auto sorted_vertices = graph.topologicalSort();
+    std::cout << "  Topological Sorting Order: ";
+    for (const auto &vertex : sorted_vertices) {
+        std::cout << vertex << " ";
+    }
+    std::cout << std::endl;
 
     assert(checkTopologicalSort(graph, sorted_vertices));
     std::cout << "Done"  << std::endl;
+}
+
+void testIsDAG() {
+    std::cout << "Testing graph.isDAG ..." << std::endl;
+    Graph g;
+
+    // DAG: 1 -> 2 -> 3
+    g.addVertex(1); g.addVertex(2); g.addVertex(3);
+    g.addEdge(1, 2, 1);
+    g.addEdge(2, 3, 2);
+
+    assert(g.isDAG());
+
+    // Add a cycle: 3 -> 1
+    g.addEdge(3, 1, 3);
+    assert(!g.isDAG());
+
+    std::cout << "Done" << std::endl;
+}
+
+void testGetPath() {
+    std::cout << "Testing graph.getPath ..." << std::endl;
+    Graph g;
+
+    g.addVertex(1); g.addVertex(2); g.addVertex(3); g.addVertex(4);
+    g.addEdge(1, 2, 1);
+    g.addEdge(2, 3, 2);
+    g.addEdge(3, 4, 3);
+
+    auto path = g.getPath(1, 4);
+    std::vector<size_t> expected = {1, 2, 3, 4};
+
+    assert(path.size() == expected.size() - 1);  // 3 edges for 4 vertices
+
+    for (size_t i = 0; i < path.size(); ++i) {
+        assert(path[i]->from->vid == expected[i]);
+        assert(path[i]->to->vid == expected[i + 1]);
+    }
+
+    auto no_path = g.getPath(4, 1);
+    assert(no_path.empty());
+
+    std::cout << "Done" << std::endl;
+}
+
+void testIsTotallyOrdered() {
+    std::cout << "Testing graph.isTotallyOrdered ..." << std::endl;
+    Graph g;
+
+    // Total order: 10 -> 20 -> 30 -> 40
+    g.addVertex(10); g.addVertex(20); g.addVertex(30); g.addVertex(40);
+    g.addEdge(10, 20, 1);
+    g.addEdge(20, 30, 2);
+    g.addEdge(30, 40, 3);
+
+    assert(g.isDAG());
+    assert(g.isTotallyOrdered());
+
+    // Break total order by adding a parallel branch
+    g.addVertex(50);
+    g.addEdge(20, 50, 4);  // Now 20 points to two nodes: 30 and 50
+
+    assert(g.isDAG());
+    assert(!g.isTotallyOrdered());
+
+    std::cout << "Done" << std::endl;
 }
 
 void testRules() {
@@ -428,6 +504,9 @@ void testOptimalPaths() {
 int main() {
     testGraph();
     testWeightedGraph();
+    testIsDAG();
+    testGetPath();
+    testIsTotallyOrdered();
     testRules();
     const Rulebook rulebook = testRulebook();
     testRulebookCost(rulebook);
