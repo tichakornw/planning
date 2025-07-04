@@ -5,7 +5,8 @@
 #include <unordered_set>
 
 // Define the hash function for ElementWithCost
-template <typename ElementType, typename CostType> struct ElementWithCost {
+template <typename ElementType, typename CostType>
+struct ElementWithCost {
     ElementType element;
     CostType cost;
     size_t eid;
@@ -22,17 +23,31 @@ template <typename ElementType, typename CostType> struct ElementWithCost {
     }
 };
 
-template <typename ElementType, typename CostType> class OptimalSet {
+template <typename ElementType, typename CostType>
+class OptimalSet {
   public:
     CostType getCost(size_t eid) { return optimal_elements[eid].cost; }
 
-    ElementWithCost<ElementType, CostType> getElement(size_t eid) {
-        return optimal_elements[eid];
+    const ElementWithCost<ElementType, CostType> getElement(size_t eid) const {
+        return optimal_elements.at(eid);
+    }
+
+    size_t getNumElements() const {
+        return optimal_elements.size();
     }
 
     bool isIn(size_t eid) {
         auto it = optimal_elements.find(eid);
         return it != optimal_elements.end();
+    }
+
+    std::vector<size_t> getAllElementIDs() const {
+        std::vector<size_t> eids;
+        eids.reserve(optimal_elements.size());  // Reserve space for efficiency
+        for (const auto& [eid, _] : optimal_elements) {
+            eids.push_back(eid);
+        }
+        return eids;
     }
 
     std::unordered_set<size_t> insert(const ElementType &element,

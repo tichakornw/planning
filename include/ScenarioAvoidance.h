@@ -4,6 +4,8 @@
 #include <cmath>
 
 #include "RulebookCost.h"
+#include "Rulebook.h"
+#include "Rule.h"
 #include "Scenario.h"
 
 class ScenarioAvoidance : public Scenario {
@@ -25,15 +27,24 @@ class ScenarioAvoidance : public Scenario {
 
   private:
     void buildRulebook() {
-        rulebook.addEquivalentRules({0});
-        rulebook.addEquivalentRules({1});
-        rulebook.addEquivalentRules({2});
-        rulebook.addEquivalentRules({3});
+        const RuleSum r0("r0");
+        const RuleSum r1("r1");
+        const RuleSum r2("r2");
+        const RuleSum r3("r3");
 
-        rulebook.addGTRelation(0, 1);
-        rulebook.addGTRelation(0, 2);
-        rulebook.addGTRelation(1, 3);
-        rulebook.addGTRelation(2, 3);
+        const size_t r0_id = rulebook.addRule(r0);
+        const size_t r1_id = rulebook.addRule(r1);
+        const size_t r2_id = rulebook.addRule(r2);
+        const size_t r3_id = rulebook.addRule(r3);
+
+        rulebook.setEquivalentClasses({
+                {r0_id}, {r1_id}, {r2_id}, {r3_id}
+            });
+
+        rulebook.addGTRelation(r0_id, r1_id);
+        rulebook.addGTRelation(r0_id, r2_id);
+        rulebook.addGTRelation(r1_id, r3_id);
+        rulebook.addGTRelation(r2_id, r3_id);
 
         rulebook.build();
 

@@ -11,6 +11,10 @@
 
 class Graph {
   public:
+    ~Graph() {
+        clear();  // Ensure proper cleanup
+    }
+
     // Add a vertex to the graph
     void addVertex(size_t vid) {
         if (vertices.find(vid) == vertices.end()) {
@@ -29,25 +33,76 @@ class Graph {
         }
     }
 
-    void RemoveEdge(const std::shared_ptr<Edge>& edge) {
+    void removeEdge(const std::shared_ptr<Edge>& edge) {
         // Remove from top-level edges
+        removeEdgeFromVertices(edge);
         edges.erase(std::remove(edges.begin(), edges.end(), edge), edges.end());
-        RemoveEdgeFromVertices(edge);
     }
 
+    void removeVertex(size_t vertex_id) {
+        auto it = vertices.find(vertex_id);
+        if (it == vertices.end()) {
+            throw std::invalid_argument("Vertex ID " + std::to_string(vertex_id) + " not found.");
+        }
 
+        const auto& vertex = it->second;
+
+        // Collect all incident edges (to avoid mutating while iterating)
+        std::vector<std::shared_ptr<Edge>> edges_to_remove;
+        for (const auto& edge : vertex->out_edges) {
+            edges_to_remove.push_back(edge);
+        }
+        for (const auto& edge : vertex->in_edges) {
+            edges_to_remove.push_back(edge);
+        }
+
+        // Remove all incident edges from graph and from connected vertices
+        for (const auto& edge : edges_to_remove) {
+            removeEdge(edge);
+        }
+
+        // Finally, remove the vertex from the vertex map
+        vertices.erase(it);
+    }
+
+    [[nodiscard]]
     const std::shared_ptr<Vertex> getVertex(size_t vid) const {
         auto it = vertices.find(vid);
         return it != vertices.end() ? it->second : nullptr;
     }
 
+    [[nodiscard]]
+    const std::shared_ptr<Edge> getEdge(size_t eid) const {
+        for (const auto& edge : edges) {
+            if (edge->eid == eid)
+                return edge;
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]]
     const std::vector<std::shared_ptr<Edge>>& getEdges() const {
         return edges;
     }
 
+    void clear() {
+        for (auto& edge : edges) {
+            edge->clear();  // breaks edge → vertex links
+        }
 
+        for (auto& [_, vertex] : vertices) {
+            vertex->clear();   // breaks vertex → edge links
+        }
+
+        // Then clear the top-level containers
+        edges.clear();
+        vertices.clear();
+    }
+
+    [[nodiscard]]
     size_t getNumVertices() const { return vertices.size(); }
 
+    [[nodiscard]]
     std::unordered_set<size_t> findSuccessors(size_t start_id) const {
         std::unordered_set<size_t> successors;
         std::queue<size_t> to_visit;
@@ -78,6 +133,7 @@ class Graph {
     }
 
     // Perform topological sort using DFS
+    [[nodiscard]]
     std::vector<size_t> topologicalSort() const {
         std::vector<size_t> result;
         std::unordered_map<std::shared_ptr<Vertex>, bool> visited;
@@ -120,6 +176,7 @@ class Graph {
     }
 
     // Check that the edges and those contained in vertices are consistent
+    [[nodiscard]]
     bool is_consistent() const {
         // Check that all edges in graph.edges are also in from->out_edges and to->in_edges
         for (const auto& edge : edges) {
@@ -171,24 +228,32 @@ class Graph {
     std::unordered_map<size_t, std::shared_ptr<Vertex>> vertices;
     std::vector<std::shared_ptr<Edge>> edges;
 
-    void addEdgeToGraph(std::shared_ptr<Vertex> v1, std::shared_ptr<Vertex> v2,
+    bool addEdgeToGraph(std::shared_ptr<Vertex> v1, std::shared_ptr<Vertex> v2,
                         std::shared_ptr<Edge> edge) {
         for (const auto &e : v1->out_edges) {
             if (e->to == v2) {
-                return;
+                edge->clear();
+                std::cout << "WARNING: adding duplicate edge from " << *v1 << " to " << *v2 << std::endl;
+                return false;
             }
         }
         v1->addOutEdge(edge);
         v2->addInEdge(edge);
         edges.push_back(edge);
+        return true;
     }
 
-    void RemoveEdgeFromVertices(const std::shared_ptr<Edge>& edge) {
-        auto& out_vec = edge->from->out_edges;
-        out_vec.erase(std::remove(out_vec.begin(), out_vec.end(), edge), out_vec.end());
+    void removeEdgeFromVertices(const std::shared_ptr<Edge>& edge) {
+        if (edge->from) {
+            auto& out_vec = edge->from->out_edges;
+            out_vec.erase(std::remove(out_vec.begin(), out_vec.end(), edge), out_vec.end());
+        }
 
-        auto& in_vec = edge->to->in_edges;
-        in_vec.erase(std::remove(in_vec.begin(), in_vec.end(), edge), in_vec.end());
+        if (edge->to) {
+            auto& in_vec = edge->to->in_edges;
+            in_vec.erase(std::remove(in_vec.begin(), in_vec.end(), edge), in_vec.end());
+        }
+        edge->clear();
     }
 
     void topologicalSortUtil(

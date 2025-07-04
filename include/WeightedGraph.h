@@ -103,12 +103,9 @@ template <typename CostType> class WeightedGraph : public Graph {
             throw std::invalid_argument("Invalid initial or goal vertex");
 
         const auto cost_to_come = this->getCostToComeFrom<SubCostType>(vI, use_max, false, getSubCost);
-        std::cout << "cost to go" << std::endl;
         const auto cost_to_go = this->getCostToComeFrom<SubCostType>(vG, use_max, true, getSubCost);
 
         const auto optimal_cost = cost_to_come.at(to);
-
-        std::cout << "Optimal cost: " << optimal_cost << std::endl;
 
         // Determine whether a given edge is part of optimal subgraph
         auto is_edge_optimal = [&](const WEdgePtr& wedge) {
@@ -131,7 +128,8 @@ template <typename CostType> class WeightedGraph : public Graph {
             if (is_edge_optimal(wedge)) return false;
 
             // Remove from vertices as a side effect
-            RemoveEdgeFromVertices(edge);  // removes from from->out_edges and to->in_edges
+            removeEdgeFromVertices(edge);  // removes from from->out_edges and to->in_edges
+            edge->clear();
             return true;       // mark for removal from top-level `edges`
         });
 
@@ -205,11 +203,8 @@ template <typename CostType> class WeightedGraph : public Graph {
                 std::vector<WEdgePtr> next_path =
                     current_path_with_cost.element;
                 next_path.push_back(wedge);
-                // std::cout << "vtid: " << vtid << " cost " <<
-                // current_path_with_cost.cost;
                 const auto next_cost =
                     current_path_with_cost.cost + wedge->cost;
-                // std::cout << " next cost: " << next_cost << std::endl;
                 const std::unordered_set<size_t> removed_vtids =
                     optimal_paths[next_vertex].insert(next_path, next_cost,
                                                       n + 1);
@@ -270,7 +265,6 @@ template <typename CostType> class WeightedGraph : public Graph {
 
         while (!pq.empty()) {
             auto [current_cost, current_vertex] = pq.top();
-            std::cout << "  current_cost " << current_cost << " vertex " << current_vertex->vid << std::endl;
             pq.pop();
 
             if (current_cost > cost_to_come[current_vertex->vid])
@@ -281,7 +275,6 @@ template <typename CostType> class WeightedGraph : public Graph {
             for (const auto &edge : vertex_edges) {
                 const auto wedge = std::dynamic_pointer_cast<WEdge>(edge);
                 const auto next_vertex = reverse_graph ? edge->from : edge->to;
-                std::cout << "    next vertex: " << next_vertex->vid << std::endl;
                 SubCostType edge_cost = getSubCost(wedge);
                 SubCostType new_cost = use_max ? std::max(current_cost, edge_cost) : current_cost + edge_cost;
 

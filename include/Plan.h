@@ -9,6 +9,10 @@ class Plan {
 
     void add(int u) { actions.push_back(u); }
 
+    bool operator==(const Plan& other) const {
+        return actions == other.actions;
+    }
+
     // Overloading the stream insertion operator for easy printing
     friend std::ostream &operator<<(std::ostream &os, const Plan &pi) {
         os << "< ";

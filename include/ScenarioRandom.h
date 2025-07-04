@@ -4,6 +4,8 @@
 #include <random>
 
 #include "RulebookCost.h"
+#include "Rulebook.h"
+#include "Rule.h"
 #include "Scenario.h"
 
 class ScenarioRandom : public Scenario {
@@ -83,7 +85,7 @@ class ScenarioRandom : public Scenario {
     }
 
     RulebookCost getRandomCost() {
-        RulebookCost cost(rulebook.getNumRules());
+        RulebookCost cost;
         for (size_t rule_index = 0; rule_index < rulebook.getNumRules();
              ++rule_index)
             cost.setRuleCost(rule_index, getRandomDouble(0, 10.0));
@@ -91,6 +93,11 @@ class ScenarioRandom : public Scenario {
     }
 
     void buildRulebook() {
+        for (size_t i = 0; i < num_rules; ++i) {
+            const RuleSum r("r"+std::to_string(i));
+            rulebook.addRule(r);
+        }
+
         const std::vector<std::unordered_set<size_t>> equiv_rules_set =
             getRandomSubsets(num_rules);
         std::cout << "  Rules: ";
@@ -105,9 +112,7 @@ class ScenarioRandom : public Scenario {
         }
         std::cout << std::endl;
 
-        for (const auto &equiv_rules : equiv_rules_set) {
-            rulebook.addEquivalentRules(equiv_rules);
-        }
+        rulebook.setEquivalentClasses(equiv_rules_set);
         const size_t num_equiv_rules = equiv_rules_set.size();
 
         if (num_equiv_rules >= 2) {

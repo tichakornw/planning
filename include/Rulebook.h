@@ -7,6 +7,15 @@
 #include <vector>
 
 #include "Graph.h"
+#include "Rule.h"
+
+
+struct PairHash {
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2> &p) const {
+        return std::hash<T1>()(p.first) ^ (std::hash<T2>()(p.second) << 1);
+    }
+};
 
 class Rulebook {
   public:
@@ -55,7 +64,7 @@ class Rulebook {
     };
 
   public:
-    Rulebook() : num_rules(0), is_built(false) {}
+    Rulebook() : is_built(false) {}
 
     Iterator begin() const {
         return Iterator(sorted_rule_set, quotient_rule_set, 0);
@@ -66,40 +75,61 @@ class Rulebook {
                         sorted_rule_set.size());
     }
 
-    bool addEquivalentRules(const std::unordered_set<size_t> &equiv_rules) {
-        for (auto &rule_set : quotient_rule_set) {
-            for (auto rule : rule_set) {
-                if (equiv_rules.find(rule) != equiv_rules.end()) {
-                    return false;
-                }
-            }
-        }
-        for (auto &rule : equiv_rules) {
-            if (rule >= num_rules) {
-                num_rules = rule + 1;
-            }
-        }
-        quotient_rule_set.push_back(equiv_rules);
-        is_built = false;
-        return true;
+    size_t addRule(const Rule& rule) {
+        size_t rid = rules.size();
+        rules.push_back(rule.clone());
+        quotient_rule_set.emplace_back(std::unordered_set<size_t>{rid});
+        return rid;
     }
 
-    bool addGTRelation(size_t from_rule, size_t to_rule) {
+    const Rule& getRule(size_t id) const {
+        return *rules[id];
+    }
+
+    void setEquivalentClasses(const std::vector<std::unordered_set<size_t>>& eq_classes) {
+        // TO FIX: If this function is called after addGTRelation, the priority will be broken
+        if (!rule_edges.empty()) {
+            throw std::logic_error("Cannot set equivalence classes after GT relations have been added.");
+        }
+        quotient_rule_set = completeQuotientRuleSet(eq_classes);
+        is_built = false;
+    }
+
+    void addGTRelation(size_t from_rule, size_t to_rule) {
         int from_rule_index = getQuotientIndex(from_rule);
+        if (from_rule_index < 0) {
+            throw std::invalid_argument("from_rule " + std::to_string(from_rule) + " not found in rulebook.");
+        }
+
         int to_rule_index = getQuotientIndex(to_rule);
-        if (from_rule_index < 0 || to_rule_index < 0)
-            return false;
+        if (to_rule_index < 0) {
+            throw std::invalid_argument("to_rule " + std::to_string(to_rule) + " not found in rulebook.");
+        }
+
+        if (from_rule_index == to_rule_index) {
+            throw std::invalid_argument("rules are of the same rank ");
+        }
+
+        std::pair<size_t, size_t> backward_edge = {to_rule_index, from_rule_index};
+
+        if (rule_edges.find(backward_edge) != rule_edges.end()) {
+            throw std::invalid_argument("Rule " + std::to_string(to_rule) + " is of higher rank than " + std::to_string(from_rule));
+        }
+
         std::pair<size_t, size_t> edge =
             std::make_pair((size_t)from_rule_index, (size_t)to_rule_index);
-        rule_edges.push_back(edge);
+        rule_edges.insert(edge);
         is_built = false;
-        return true;
     }
 
-    size_t getNumRules() const { return num_rules; }
+    size_t getNumRules() const { return rules.size(); }
 
     bool build() {
-        addMissingRules();
+        if (!isQuotientRuleSetComplete()) {
+            throw std::logic_error("Cannot build because the set of equivalent classes is not complete.");
+        }
+
+        rule_graph.clear();
         for (size_t vid = 0; vid < quotient_rule_set.size(); ++vid) {
             rule_graph.addVertex(vid);
         }
@@ -141,6 +171,7 @@ class Rulebook {
     }
 
     std::unordered_set<size_t> getSuccessors(size_t rule) const {
+        assert(is_built);
         auto it = rule_successors.find(rule);
         if (it != rule_successors.end()) {
             return it->second;
@@ -152,6 +183,13 @@ class Rulebook {
     // Display the rulebook
     virtual void display() const {
         std::cout << "Rules: ";
+        for (size_t id = 0; id < this->getNumRules(); ++id) {
+            if (id > 0)
+                std::cout << ", ";
+            std::cout << "(" << id << ", " << *rules[id] << ")";
+        }
+        std::cout << std::endl;
+        std::cout << "Equivalent class: ";
         for (const auto &rule_set : quotient_rule_set) {
             std::cout << "{ ";
             for (const auto rule : rule_set) {
@@ -181,17 +219,63 @@ class Rulebook {
         return -1;
     }
 
-    void addMissingRules() {
-        for (size_t rule_index = 0; rule_index < num_rules; ++rule_index) {
-            if (getQuotientIndex(rule_index) < 0)
-                quotient_rule_set.push_back({rule_index});
+    bool isQuotientRuleSetComplete() const {
+        std::unordered_set<size_t> seen;
+
+        // Collect all rule indices that appear in quotient_rule_set
+        for (const auto& eq_class : quotient_rule_set) {
+            for (size_t id : eq_class) {
+                if (id >= rules.size()) {
+                    std::cerr << "Invalid rule ID: " << id << " (out of bounds)" << std::endl;
+                    return false;
+                }
+                if (!seen.insert(id).second) {
+                    std::cerr << "Duplicate rule ID in quotient_rule_set: " << id << std::endl;
+                    return false;
+                }
+            }
         }
+
+        // Check that all rules are present
+        if (seen.size() != rules.size()) {
+            std::cerr << "Missing rules in quotient_rule_set." << std::endl;
+            return false;
+        }
+
+        return true;
     }
 
-    std::vector<std::unordered_set<size_t>> quotient_rule_set;
-    std::vector<std::pair<size_t, size_t>> rule_edges;
+    std::vector<std::unordered_set<size_t>>
+    completeQuotientRuleSet(const std::vector<std::unordered_set<size_t>>& eq_classes) {
+        std::unordered_set<size_t> seen_rids;
 
-    size_t num_rules;
+        // Collect seen rule IDs
+        for (const auto& eq_class : eq_classes) {
+            for (size_t rid : eq_class) {
+                if (rid >= this->getNumRules()) {
+                    throw std::invalid_argument("Rule ID " + std::to_string(rid) + " not found in rulebook.");
+                }
+                if (!seen_rids.insert(rid).second) {
+                    throw std::invalid_argument("Duplicate rule ID " + std::to_string(rid) + " in equivalence classes.");
+                }
+            }
+        }
+
+        // Add missing rule IDs as singleton equivalence classes
+        std::vector<std::unordered_set<size_t>> completed_classes = eq_classes;
+        for (size_t rid = 0; rid < this->getNumRules(); ++rid) {
+            if (seen_rids.find(rid) == seen_rids.end()) {
+                completed_classes.emplace_back(std::unordered_set<size_t>{rid});
+            }
+        }
+
+        return completed_classes;
+    }
+
+    std::vector<std::shared_ptr<Rule>> rules;
+    std::vector<std::unordered_set<size_t>> quotient_rule_set;
+    std::unordered_set<std::pair<size_t, size_t>, PairHash> rule_edges;
+
     Graph rule_graph;
     std::vector<size_t> sorted_rule_set;
     std::unordered_map<size_t, std::unordered_set<size_t>> rule_successors;
