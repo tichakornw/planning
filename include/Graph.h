@@ -23,13 +23,19 @@ class Graph {
     }
 
     // Add an edge to the graph
-    void addEdge(size_t from, size_t to, size_t eid) {
+    size_t addEdge(size_t from, size_t to) {
+        size_t eid = edges.size();
+        addEdge(from, to, eid, true);
+        return eid;
+    }
+
+    void addEdge(size_t from, size_t to, size_t eid, bool allow_duplicate=true) {
         auto v1 = getVertex(from);
         auto v2 = getVertex(to);
 
         if (v1 && v2) {
             auto edge = std::make_shared<Edge>(v1, v2, eid);
-            addEdgeToGraph(v1, v2, edge);
+            addEdgeToGraph(v1, v2, edge, allow_duplicate);
         }
     }
 
@@ -294,12 +300,14 @@ class Graph {
     std::vector<std::shared_ptr<Edge>> edges;
 
     bool addEdgeToGraph(std::shared_ptr<Vertex> v1, std::shared_ptr<Vertex> v2,
-                        std::shared_ptr<Edge> edge) {
-        for (const auto &e : v1->out_edges) {
-            if (e->to == v2) {
-                edge->clear();
-                std::cout << "WARNING: adding duplicate edge from " << *v1 << " to " << *v2 << std::endl;
-                return false;
+                        std::shared_ptr<Edge> edge, bool allow_duplicate) {
+        if (!allow_duplicate) {
+            for (const auto &e : v1->out_edges) {
+                if (e->to == v2) {
+                    edge->clear();
+                    std::cout << "WARNING: adding duplicate edge from " << *v1 << " to " << *v2 << std::endl;
+                    return false;
+                }
             }
         }
         v1->addOutEdge(edge);

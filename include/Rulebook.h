@@ -133,10 +133,8 @@ class Rulebook {
         for (size_t vid = 0; vid < quotient_rule_set.size(); ++vid) {
             rule_graph.addVertex(vid);
         }
-        size_t eid = 0;
         for (const auto &edge : rule_edges) {
-            rule_graph.addEdge(edge.first, edge.second, eid);
-            ++eid;
+            rule_graph.addEdge(edge.first, edge.second);
         }
         sorted_rule_set = rule_graph.topologicalSort();
 

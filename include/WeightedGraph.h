@@ -48,13 +48,19 @@ template <typename CostType> class WeightedGraph : public Graph {
     using WEdgePtr = std::shared_ptr<WEdge>;
 
     // Add an edge with weight to the graph
-    void addEdge(size_t from, size_t to, const CostType &cost, size_t eid) {
+    size_t addEdge(size_t from, size_t to, const CostType &cost) {
+        size_t eid = edges.size();
+        addEdge(from, to, cost, eid, true);
+        return eid;
+    }
+
+    void addEdge(size_t from, size_t to, const CostType &cost, size_t eid, bool allow_duplicate=true) {
         auto v1 = getVertex(from);
         auto v2 = getVertex(to);
 
         if (v1 && v2) {
             auto edge = std::make_shared<WEdge>(v1, v2, cost, eid);
-            addEdgeToGraph(v1, v2, edge);
+            addEdgeToGraph(v1, v2, edge, allow_duplicate);
         }
     }
 
