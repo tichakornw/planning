@@ -1,8 +1,8 @@
 #ifndef _RULEBOOKCOST_H
 #define _RULEBOOKCOST_H
 
-#include "Rulebook.h"
 #include "RuleCost.h"
+#include "Rulebook.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -10,7 +10,8 @@ class RulebookCost {
   public:
     RulebookCost() {
         if (!rulebook) {
-            throw std::runtime_error("Rulebook must be initialized before RulebookCost.");
+            throw std::runtime_error(
+                "Rulebook must be initialized before RulebookCost.");
         }
 
         const size_t n = rulebook->getNumRules();
@@ -24,12 +25,18 @@ class RulebookCost {
         cost_vector[rule_index]->setValue(cost);
     }
 
-    std::shared_ptr<RuleCost>& operator[](size_t index) {
+    std::shared_ptr<RuleCost> &operator[](size_t index) {
         return cost_vector[index];
     }
 
-    const std::shared_ptr<RuleCost>& operator[](size_t index) const {
+    const std::shared_ptr<RuleCost> &operator[](size_t index) const {
         return cost_vector[index];
+    }
+
+    size_t getNumRules() const { return cost_vector.size(); }
+
+    const std::vector<std::shared_ptr<RuleCost>> &getCosts() const {
+        return cost_vector;
     }
 
     static void setRulebook(const Rulebook &rb) {
@@ -37,6 +44,17 @@ class RulebookCost {
     }
 
     RulebookCost getZero() { return RulebookCost(); }
+
+    template <typename SubCostType>
+    SubCostType getSubCost(size_t rule_index) const {
+        auto cost_ptr =
+            std::dynamic_pointer_cast<SubCostType>(cost_vector[rule_index]);
+        if (!cost_ptr) {
+            throw std::runtime_error("SubCost type mismatch at rule index " +
+                                     std::to_string(rule_index));
+        }
+        return *cost_ptr;
+    }
 
     // Overloading the stream insertion operator for easy printing
     friend std::ostream &operator<<(std::ostream &os, const RulebookCost &c) {
@@ -77,8 +95,8 @@ class RulebookCost {
                 if (overridden_rules.find(rule_index) != overridden_rules.end())
                     continue;
 
-                const RuleCost& rule_cost = *cost_vector[rule_index];
-                const RuleCost& other_cost = *other[rule_index];
+                const RuleCost &rule_cost = *cost_vector[rule_index];
+                const RuleCost &other_cost = *other[rule_index];
 
                 if (rule_cost > other_cost)
                     return false;
@@ -114,6 +132,21 @@ class RulebookCost {
     double value;
 };
 
-std::unique_ptr<Rulebook> RulebookCost::rulebook = nullptr;
+// Make RulebookCost hashable
+namespace std {
+template <> struct hash<RulebookCost> {
+    std::size_t operator()(const RulebookCost &cost) const {
+        std::size_t seed = 0;
+        for (const auto &rule_cost : cost.getCosts()) {
+            // Hash using getValue() (same logic for RuleCostMax/RuleCostSum)
+            std::size_t h = std::hash<double>()(rule_cost->getValue());
+
+            // Combine hashes (boost-like)
+            seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+} // namespace std
 
 #endif

@@ -1,13 +1,12 @@
 #ifndef _RULE_H
 #define _RULE_H
 
-#include <iostream>
 #include "RuleCost.h"
+#include <iostream>
 
 class Rule {
   public:
-    Rule(const std::string &name)
-        : name(name) {}
+    Rule(const std::string &name) : name(name) {}
 
     virtual ~Rule() = default;
 
@@ -15,7 +14,8 @@ class Rule {
     // allow Rulebook to store its derived classes in a single container.
     virtual std::shared_ptr<Rule> clone() const = 0;
 
-    // This is to allow RulebookCost to have a mix of RuleCostMax and RuleCostSum cost
+    // This is to allow RulebookCost to have a mix of RuleCostMax and
+    // RuleCostSum cost
     virtual std::shared_ptr<RuleCost> makeCost(double value) const = 0;
 
     // Overloading the stream insertion operator for easy printing
@@ -37,16 +37,15 @@ class Rule {
     bool operator==(const Rule &other) const { return value == other.value; }
     */
 
-    const std::string& getName() const { return name; }
+    const std::string &getName() const { return name; }
 
   protected:
     std::string name;
 };
 
 class RuleMax : public Rule {
-public:
-    RuleMax(const std::string& name)
-        : Rule(name) {}
+  public:
+    RuleMax(const std::string &name) : Rule(name) {}
 
     std::shared_ptr<Rule> clone() const override {
         return std::make_shared<RuleMax>(*this);
@@ -64,9 +63,8 @@ public:
 };
 
 class RuleSum : public Rule {
-public:
-    RuleSum(const std::string& name)
-        : Rule(name) {}
+  public:
+    RuleSum(const std::string &name) : Rule(name) {}
 
     std::shared_ptr<Rule> clone() const override {
         return std::make_shared<RuleSum>(*this);

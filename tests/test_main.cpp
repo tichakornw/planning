@@ -12,6 +12,7 @@
 #include "WeightedGraph.h"
 
 
+// Check that sort_vertices is a topological sort of graph
 bool checkTopologicalSort(const Graph& graph, const std::vector<size_t>& sorted_vertices) {
     // Build a map from vertex ID to its index in the sorted list
     std::unordered_map<size_t, size_t> vertex_order;
@@ -39,6 +40,35 @@ bool checkTopologicalSort(const Graph& graph, const std::vector<size_t>& sorted_
     }
 
     return true;
+}
+
+// Check that two graphs have exactly the same set of edges
+template <typename CostType>
+bool haveSameEdges(const WeightedGraph<CostType>& g1, const WeightedGraph<CostType>& g2) {
+        using EdgeTuple = std::tuple<size_t, size_t, size_t, CostType>;
+
+    auto extractEdgeTuples = [](const WeightedGraph<CostType>& g) {
+        std::vector<EdgeTuple> edgeTuples;
+        for (const auto& edge : g.getEdges()) {
+            auto wedge = std::dynamic_pointer_cast<WeightedEdge<CostType>>(edge);
+            if (!wedge)
+                throw std::runtime_error("Edge is not of expected type.");
+
+            edgeTuples.emplace_back(
+                wedge->from->vid,
+                wedge->to->vid,
+                wedge->eid,
+                wedge->cost
+            );
+        }
+        std::sort(edgeTuples.begin(), edgeTuples.end());
+        return edgeTuples;
+    };
+
+    auto edges1 = extractEdgeTuples(g1);
+    auto edges2 = extractEdgeTuples(g2);
+
+    return edges1 == edges2;
 }
 
 void testGraph() {
@@ -407,7 +437,7 @@ void testSubgraph() {
     std::cout << "Graph:" << std::endl;
     graph.display();
 
-    graph.reduceToOptimalSubgraph<double>(1, 3, false);
+    graph.reduceToOptimalSubgraph<double>(1, 3);
     std::cout << "Optimal subgraph:" << std::endl;
     graph.display();
     assert(graph.is_consistent());
@@ -431,6 +461,110 @@ void testSubgraph() {
 
     assert(actual_edges == expected_edges);
     std::cout << "Done"  << std::endl;
+}
+
+void testSubgraphRulebook() {
+    std::cout << "Testing Subgraph with Rulebook ..." << std::endl;
+    using WGraph = WeightedGraph<RulebookCost>;
+    WGraph graph;
+
+    // Set up Rulebook
+    Rulebook rulebook;
+    size_t rid_sum = rulebook.addRule(RuleSum("sumRule"));   // index 0
+    size_t rid_max = rulebook.addRule(RuleMax("maxRule"));   // index 1
+    rulebook.build();
+    RulebookCost::setRulebook(rulebook);
+
+    // Create a simple DAG
+    graph.addVertex(0);
+    graph.addVertex(1);
+    graph.addVertex(2);
+    graph.addVertex(3);
+
+    RulebookCost c1;
+    c1.setRuleCost(rid_sum, 5.0);
+    c1.setRuleCost(rid_max, 10.0);
+    size_t e01 = graph.addEdge(0, 1, c1);
+
+    RulebookCost c2;
+    c2.setRuleCost(rid_sum, 2.0);
+    c2.setRuleCost(rid_max, 4.0);
+    size_t e12 = graph.addEdge(1, 2, c2);
+
+    RulebookCost c3;
+    c3.setRuleCost(rid_sum, 4.0);
+    c3.setRuleCost(rid_max, 7.0);
+    size_t e03 = graph.addEdge(0, 3, c3);
+
+    RulebookCost c4;
+    c4.setRuleCost(rid_sum, 4.0);
+    c4.setRuleCost(rid_max, 6.0);
+    size_t e32 = graph.addEdge(3, 2, c4);
+
+    WGraph graph_copy = graph;
+
+    // Reduce based on RuleCostSum (index 0)
+    const auto cost1 = graph.reduceToOptimalSubgraph<RuleCostSum>(
+        0, 2, [](const RulebookCost& cost) {
+            return cost.getSubCost<RuleCostSum>(0);  // index of RuleSum
+        });
+
+    assert(cost1.getValue() == 7.0);
+    assert(graph.getEdge(e03) == nullptr);
+    assert(graph.getEdge(e32) == nullptr);
+
+    // Get optimal subgraph
+    auto opt_subgraph = graph_copy.extractOptimalSubgraph<RuleCostSum>(
+        0, 2, [](const RulebookCost& cost) {
+            return cost.getSubCost<RuleCostSum>(0);  // index of RuleSum
+        });
+
+    assert(haveSameEdges(opt_subgraph, graph));
+
+    auto path = graph.getPath(0, 2);
+    // Expect path: 0 -> 1 -> 2 (sum: 5 + 2 = 7 vs. 4 + 4 = 8)
+    assert(path.size() == 2);
+    assert(path[0]->from->vid == 0 && path[0]->to->vid == 1);
+    assert(path[1]->from->vid == 1 && path[1]->to->vid == 2);
+
+    // Reconstruct the graph and test with RuleCostMax
+    WGraph graph2;
+    graph2.addVertex(0);
+    graph2.addVertex(1);
+    graph2.addVertex(2);
+    graph2.addVertex(3);
+    e01 = graph2.addEdge(0, 1, c1);
+    e12 = graph2.addEdge(1, 2, c2);
+    e03 = graph2.addEdge(0, 3, c3);
+    e32 = graph2.addEdge(3, 2, c4);
+
+    graph_copy = graph2;
+
+    // Reduce based on RuleCostMax (index 1)
+    const auto cost2 = graph2.reduceToOptimalSubgraph<RuleCostMax>(
+        0, 2, [](const RulebookCost& cost) {
+            return cost.getSubCost<RuleCostMax>(1);  // index of RuleMax
+        });
+
+    assert(cost2.getValue() == 7.0);
+    assert(graph2.getEdge(e01) == nullptr);
+    assert(graph2.getEdge(e12) == nullptr);
+
+    // Get optimal subgraph
+    opt_subgraph = graph_copy.extractOptimalSubgraph<RuleCostMax>(
+        0, 2, [](const RulebookCost& cost) {
+            return cost.getSubCost<RuleCostMax>(1);  // index of RuleMax
+        });
+
+    assert(haveSameEdges(opt_subgraph, graph2));
+
+    auto path2 = graph2.getPath(0, 2);
+    // Expect path: 0 -> 3 -> 2 (max: max(10,4) = 10 vs. max(7,6) = 7)
+    assert(path2.size() == 2);
+    assert(path2[0]->from->vid == 0 && path2[0]->to->vid == 3);
+    assert(path2[1]->from->vid == 3 && path2[1]->to->vid == 2);
+
+    std::cout << "Done" << std::endl;
 }
 
 void testOptimalPaths() {
@@ -513,6 +647,7 @@ int main() {
     testRulebookCost2();
     testOptimalSet();
     testSubgraph();
+    testSubgraphRulebook();
     testOptimalPaths();
 
     return 0;

@@ -3,9 +3,9 @@
 
 #include <random>
 
-#include "RulebookCost.h"
-#include "Rulebook.h"
 #include "Rule.h"
+#include "Rulebook.h"
+#include "RulebookCost.h"
 #include "Scenario.h"
 
 class ScenarioRandom : public Scenario {
@@ -59,7 +59,8 @@ class ScenarioRandom : public Scenario {
     // Function to generate a random partition of set S = {0, ..., n}
     std::vector<std::unordered_set<size_t>> getRandomSubsets(int n) {
         std::vector<int> S(n);
-        std::iota(S.begin(), S.end(), 0); // Fill S with values {0, 1, 2, ..., n-1}
+        std::iota(S.begin(), S.end(),
+                  0); // Fill S with values {0, 1, 2, ..., n-1}
 
         // Random number generator
         std::random_device rd;
@@ -94,7 +95,7 @@ class ScenarioRandom : public Scenario {
 
     void buildRulebook() {
         for (size_t i = 0; i < num_rules; ++i) {
-            const RuleSum r("r"+std::to_string(i));
+            const RuleSum r("r" + std::to_string(i));
             rulebook.addRule(r);
         }
 
@@ -133,12 +134,13 @@ class ScenarioRandom : public Scenario {
         }
 
         rulebook.build();
-        // displayRulebook();
+        displayRulebook();
     }
 
     void buildGrid(size_t num_x, size_t num_y) {
-        for (size_t vid = 0; vid < num_x * num_y; ++vid)
+        for (size_t vid = 0; vid < num_x * num_y; ++vid) {
             graph.addVertex(vid);
+        }
 
         for (size_t row = 0; row < num_y; ++row) {
             for (size_t col = 0; col < num_x; ++col) {
@@ -151,11 +153,11 @@ class ScenarioRandom : public Scenario {
                     const RulebookCost cost = getRandomCost();
                     graph.addEdge(start_vertex, start_vertex + num_x, cost, 1);
                 }
-                if (col - 1 >= 0) {
+                if (col >= 1) {
                     const RulebookCost cost = getRandomCost();
                     graph.addEdge(start_vertex, start_vertex - 1, cost, 2);
                 }
-                if (row - 1 >= 0) {
+                if (row >= 1) {
                     const RulebookCost cost = getRandomCost();
                     graph.addEdge(start_vertex, start_vertex - num_x, cost, 3);
                 }

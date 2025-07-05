@@ -3,14 +3,17 @@
 
 #include <cmath>
 
-#include "RulebookCost.h"
-#include "Rulebook.h"
 #include "Rule.h"
+#include "Rulebook.h"
+#include "RulebookCost.h"
 #include "Scenario.h"
 
 class ScenarioAvoidance : public Scenario {
   public:
-    ScenarioAvoidance() { setup(); }
+    ScenarioAvoidance(size_t refinement_option = 0)
+        : refinement_option(refinement_option) {
+        setup();
+    }
 
   protected:
     void setup() override {
@@ -26,6 +29,8 @@ class ScenarioAvoidance : public Scenario {
     }
 
   private:
+    size_t refinement_option;
+
     void buildRulebook() {
         const RuleSum r0("r0");
         const RuleSum r1("r1");
@@ -37,14 +42,18 @@ class ScenarioAvoidance : public Scenario {
         const size_t r2_id = rulebook.addRule(r2);
         const size_t r3_id = rulebook.addRule(r3);
 
-        rulebook.setEquivalentClasses({
-                {r0_id}, {r1_id}, {r2_id}, {r3_id}
-            });
+        rulebook.setEquivalentClasses({{r0_id}, {r1_id}, {r2_id}, {r3_id}});
 
         rulebook.addGTRelation(r0_id, r1_id);
         rulebook.addGTRelation(r0_id, r2_id);
         rulebook.addGTRelation(r1_id, r3_id);
         rulebook.addGTRelation(r2_id, r3_id);
+
+        if (refinement_option == 1)
+            rulebook.addGTRelation(r1_id, r2_id);
+
+        if (refinement_option == 2)
+            rulebook.addGTRelation(r2_id, r1_id);
 
         rulebook.build();
 

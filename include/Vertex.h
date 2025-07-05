@@ -1,13 +1,13 @@
 #ifndef _VERTEX_H
 #define _VERTEX_H
 
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <cassert>
 
 // Forward declaration of Edge to use it in Vertex
 class Edge;
@@ -34,8 +34,8 @@ class Vertex {
     }
 
     void clear() {
-        in_edges.clear();   // Clear incoming edge pointers
-        out_edges.clear();  // Clear outgoing edge pointers
+        in_edges.clear();  // Clear incoming edge pointers
+        out_edges.clear(); // Clear outgoing edge pointers
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Vertex &v) {
@@ -66,8 +66,8 @@ class Edge {
     }
 
     void clear() {
-        from.reset();  // Drop reference to source vertex
-        to.reset();    // Drop reference to destination vertex
+        from.reset(); // Drop reference to source vertex
+        to.reset();   // Drop reference to destination vertex
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Edge &e) {

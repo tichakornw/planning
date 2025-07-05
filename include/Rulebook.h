@@ -9,10 +9,9 @@
 #include "Graph.h"
 #include "Rule.h"
 
-
 struct PairHash {
     template <class T1, class T2>
-    std::size_t operator() (const std::pair<T1, T2> &p) const {
+    std::size_t operator()(const std::pair<T1, T2> &p) const {
         return std::hash<T1>()(p.first) ^ (std::hash<T2>()(p.second) << 1);
     }
 };
@@ -75,21 +74,22 @@ class Rulebook {
                         sorted_rule_set.size());
     }
 
-    size_t addRule(const Rule& rule) {
+    size_t addRule(const Rule &rule) {
         size_t rid = rules.size();
         rules.push_back(rule.clone());
         quotient_rule_set.emplace_back(std::unordered_set<size_t>{rid});
         return rid;
     }
 
-    const Rule& getRule(size_t id) const {
-        return *rules[id];
-    }
+    const Rule &getRule(size_t id) const { return *rules[id]; }
 
-    void setEquivalentClasses(const std::vector<std::unordered_set<size_t>>& eq_classes) {
-        // TO FIX: If this function is called after addGTRelation, the priority will be broken
+    void setEquivalentClasses(
+        const std::vector<std::unordered_set<size_t>> &eq_classes) {
+        // TO FIX: If this function is called after addGTRelation, the priority
+        // will be broken
         if (!rule_edges.empty()) {
-            throw std::logic_error("Cannot set equivalence classes after GT relations have been added.");
+            throw std::logic_error("Cannot set equivalence classes after GT "
+                                   "relations have been added.");
         }
         quotient_rule_set = completeQuotientRuleSet(eq_classes);
         is_built = false;
@@ -98,22 +98,28 @@ class Rulebook {
     void addGTRelation(size_t from_rule, size_t to_rule) {
         int from_rule_index = getQuotientIndex(from_rule);
         if (from_rule_index < 0) {
-            throw std::invalid_argument("from_rule " + std::to_string(from_rule) + " not found in rulebook.");
+            throw std::invalid_argument("from_rule " +
+                                        std::to_string(from_rule) +
+                                        " not found in rulebook.");
         }
 
         int to_rule_index = getQuotientIndex(to_rule);
         if (to_rule_index < 0) {
-            throw std::invalid_argument("to_rule " + std::to_string(to_rule) + " not found in rulebook.");
+            throw std::invalid_argument("to_rule " + std::to_string(to_rule) +
+                                        " not found in rulebook.");
         }
 
         if (from_rule_index == to_rule_index) {
             throw std::invalid_argument("rules are of the same rank ");
         }
 
-        std::pair<size_t, size_t> backward_edge = {to_rule_index, from_rule_index};
+        std::pair<size_t, size_t> backward_edge = {to_rule_index,
+                                                   from_rule_index};
 
         if (rule_edges.find(backward_edge) != rule_edges.end()) {
-            throw std::invalid_argument("Rule " + std::to_string(to_rule) + " is of higher rank than " + std::to_string(from_rule));
+            throw std::invalid_argument("Rule " + std::to_string(to_rule) +
+                                        " is of higher rank than " +
+                                        std::to_string(from_rule));
         }
 
         std::pair<size_t, size_t> edge =
@@ -126,7 +132,8 @@ class Rulebook {
 
     bool build() {
         if (!isQuotientRuleSetComplete()) {
-            throw std::logic_error("Cannot build because the set of equivalent classes is not complete.");
+            throw std::logic_error("Cannot build because the set of equivalent "
+                                   "classes is not complete.");
         }
 
         rule_graph.clear();
@@ -178,6 +185,21 @@ class Rulebook {
         }
     }
 
+    bool isTotallyOrdered() const {
+        assert(is_built);
+        if (!isAllSingletons())
+            return false;
+        return rule_graph.isTotallyOrdered();
+    }
+
+    bool isAllSingletons() const {
+        for (const auto &eq_class : quotient_rule_set) {
+            if (eq_class.size() != 1)
+                return false;
+        }
+        return true;
+    }
+
     // Display the rulebook
     virtual void display() const {
         std::cout << "Rules: ";
@@ -221,14 +243,17 @@ class Rulebook {
         std::unordered_set<size_t> seen;
 
         // Collect all rule indices that appear in quotient_rule_set
-        for (const auto& eq_class : quotient_rule_set) {
+        for (const auto &eq_class : quotient_rule_set) {
             for (size_t id : eq_class) {
                 if (id >= rules.size()) {
-                    std::cerr << "Invalid rule ID: " << id << " (out of bounds)" << std::endl;
+                    std::cerr << "Invalid rule ID: " << id << " (out of bounds)"
+                              << std::endl;
                     return false;
                 }
                 if (!seen.insert(id).second) {
-                    std::cerr << "Duplicate rule ID in quotient_rule_set: " << id << std::endl;
+                    std::cerr
+                        << "Duplicate rule ID in quotient_rule_set: " << id
+                        << std::endl;
                     return false;
                 }
             }
@@ -243,18 +268,22 @@ class Rulebook {
         return true;
     }
 
-    std::vector<std::unordered_set<size_t>>
-    completeQuotientRuleSet(const std::vector<std::unordered_set<size_t>>& eq_classes) {
+    std::vector<std::unordered_set<size_t>> completeQuotientRuleSet(
+        const std::vector<std::unordered_set<size_t>> &eq_classes) {
         std::unordered_set<size_t> seen_rids;
 
         // Collect seen rule IDs
-        for (const auto& eq_class : eq_classes) {
+        for (const auto &eq_class : eq_classes) {
             for (size_t rid : eq_class) {
                 if (rid >= this->getNumRules()) {
-                    throw std::invalid_argument("Rule ID " + std::to_string(rid) + " not found in rulebook.");
+                    throw std::invalid_argument("Rule ID " +
+                                                std::to_string(rid) +
+                                                " not found in rulebook.");
                 }
                 if (!seen_rids.insert(rid).second) {
-                    throw std::invalid_argument("Duplicate rule ID " + std::to_string(rid) + " in equivalence classes.");
+                    throw std::invalid_argument("Duplicate rule ID " +
+                                                std::to_string(rid) +
+                                                " in equivalence classes.");
                 }
             }
         }
