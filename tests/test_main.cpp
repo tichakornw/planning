@@ -31,6 +31,9 @@ void testAvoidance();
 // From test_random.cpp
 void testRandom();
 
+// From test_grid.cpp
+void testGrid();
+
 int main() {
     testGraph();
     testWeightedGraph();
@@ -47,6 +50,7 @@ int main() {
     testOptimalPaths();
     testAvoidance();
     testRandom();
+    testGrid();
 
     return 0;
 }
