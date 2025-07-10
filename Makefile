@@ -51,5 +51,5 @@ $(TMP_DIR)/%.o: $(TEST_DIR)/%.cpp $(DEP) $(DEP_TEST)
 # --------------------------------------------------------------
 .PHONY: clean, clear
 clean clear:
-	@rm -f $(BUILD_DIR)/*
-	@rm -f $(TMP_DIR)/*
+	@rm -rf $(BUILD_DIR)/*
+	@rm -rf $(TMP_DIR)/*
