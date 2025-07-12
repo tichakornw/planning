@@ -11,7 +11,7 @@ void plan(ScenarioRandom &scenario) {
     planner.getOptimalPlans();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << "planning time (ms): " << duration.count() << std::endl;
+    std::cout << "  planning time (ms): " << duration.count() << std::endl;
     ;
 }
 

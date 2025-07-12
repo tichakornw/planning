@@ -10,22 +10,25 @@
 #include "Scenario.h"
 #include "WeightedGraph.h"
 
-class ScenarioGrid : public Scenario {
+class ScenarioGrid : public Scenario<DiscreteProductState2D> {
   public:
     using WEdge = WeightedEdge<RulebookCost>;
     using WEdgePtr = std::shared_ptr<WEdge>;
 
     ScenarioGrid()
-        : world(1, 5, 1, 5), p1_region(3, 5, 1, 2), p2_region(5, 5, 4, 4),
+        : Scenario<DiscreteProductState2D>(DiscreteProductState2D(0, 0, 0),
+                                           DiscreteProductState2D(4, 5, 1)),
+          world(1, 5, 1, 5), p1_region(2, 3, 2, 2), p2_region(4, 4, 4, 4),
           obs_region(1, 3, 4, 4), obs_clearance(2), qmin(0), qmax(1),
-          sinit(1, 1), sgoal(4, 5), init_pstate(0, 0, 0),
-          goal_pstate(sgoal.x, sgoal.y, 0) {
+          sinit(1, 2) {
+        assert(init_state.q >= qmin);
+        assert(init_state.q <= qmax);
+        assert(goal_state.q >= qmin);
+        assert(goal_state.q <= qmax);
+        assert(world.contain(sinit));
+        assert(world.contain(goal_state));
         setup();
     }
-
-    size_t getVidQinit() { return qinit_vid; }
-
-    size_t getVidQgoal() { return qgoal_vid; }
 
     std::vector<DiscreteProductState2D>
     getPStatePath(const std::vector<WEdgePtr> &path) const {
@@ -33,10 +36,10 @@ class ScenarioGrid : public Scenario {
         if (path.empty())
             return pstate_path;
 
-        pstate_path.push_back(vid2pstate.at(path[0]->from->vid));
+        pstate_path.push_back(vid2state.at(path[0]->from->vid));
 
         for (const auto &edge : path) {
-            pstate_path.push_back(vid2pstate.at(edge->to->vid));
+            pstate_path.push_back(vid2state.at(edge->to->vid));
         }
 
         return pstate_path;
@@ -44,29 +47,17 @@ class ScenarioGrid : public Scenario {
 
     void printGraph(const WeightedGraph<RulebookCost> &graph) const override {
         for (const auto &pair : graph.getVertices()) {
-            std::cout << "  " << vid2pstate.at(pair.first) << " ->";
+            auto ps1 = vid2state.at(pair.first);
             for (size_t i = 0; i < pair.second->out_edges.size(); ++i) {
+                std::cout << "  \\draw[->, thick] (v-" << ps1.x << "-" << ps1.y
+                          << "-" << ps1.q << ") -- ";
                 auto edge = pair.second->out_edges[i];
                 auto weighted_edge = std::dynamic_pointer_cast<WEdge>(edge);
-                std::cout << " (" << vid2pstate.at(weighted_edge->to->vid)
-                          << "," << weighted_edge->cost << ")";
+                auto ps2 = vid2state.at(weighted_edge->to->vid);
+                std::cout << "(v-" << ps2.x << "-" << ps2.y << "-" << ps2.q
+                          << ");" << std::endl;
             }
-            std::cout << std::endl;
         }
-    }
-
-  protected:
-    void setup() override {
-        assert(init_pstate.q >= qmin);
-        assert(init_pstate.q <= qmax);
-        assert(goal_pstate.q >= qmin);
-        assert(goal_pstate.q <= qmax);
-        assert(world.contain(sinit));
-        assert(world.contain(sgoal));
-        assert(world.contain(goal_pstate));
-        buildRulebook();
-        RulebookCost::setRulebook(rulebook);
-        buildGraph();
     }
 
   private:
@@ -77,8 +68,7 @@ class ScenarioGrid : public Scenario {
     const DiscreteRegion2D p2_region;
     const DiscreteRegion2D obs_region;
     const double obs_clearance;
-    const int qmin;
-    const int qmax;
+    const int qmin, qmax;
     // Available actions
     const std::vector<DiscreteAction2D> actions = {
         DiscreteAction2D(0, 1), DiscreteAction2D(1, 0), DiscreteAction2D(0, -1),
@@ -87,21 +77,12 @@ class ScenarioGrid : public Scenario {
     size_t rid_ltl, rid_obs, rid_len;
     // initial and goal states in the world
     const DiscreteState2D sinit;
-    const DiscreteState2D sgoal;
-    // initial and goal states in the product automaton
-    const DiscreteProductState2D init_pstate;
-    const DiscreteProductState2D goal_pstate;
-    // vertex id of the init and goal states in the product automaton
-    size_t qinit_vid, qgoal_vid;
     // all vids for product states (sinit, q)
     std::vector<size_t> sinit_vids;
     // all vids for product states (init, q)
     std::vector<size_t> init_vids;
-    // map between vertex ID and product automaton state
-    std::unordered_map<size_t, DiscreteProductState2D> vid2pstate;
-    std::unordered_map<DiscreteProductState2D, size_t> pstate2vid;
 
-    void buildRulebook() {
+    void buildRulebook() override {
         const RuleSum r0("ltl");
         const RuleMax r1("obs");
         const RuleSum r2("len");
@@ -115,19 +96,16 @@ class ScenarioGrid : public Scenario {
 
         rulebook.build();
 
-        displayRulebook();
+        if (debug)
+            displayRulebook();
     }
 
-    void buildGraph() {
-        const DiscreteProductState2D tmp(1, 1, 0);
-
+    void buildGraph() override {
         // init state (0,0)
         for (int q = qmin; q <= qmax; ++q) {
             const DiscreteProductState2D pstate(0, 0, q);
             const size_t vid = addState(pstate);
             init_vids.push_back(vid);
-            if (pstate == init_pstate)
-                qinit_vid = vid;
         }
 
         // (x, y, q) for (x, y) in world
@@ -138,8 +116,6 @@ class ScenarioGrid : public Scenario {
                     const size_t vid = addState(pstate);
                     if (x == sinit.x && y == sinit.y)
                         sinit_vids.push_back(vid);
-                    if (pstate == goal_pstate)
-                        qgoal_vid = vid;
                 }
             }
         }
@@ -147,8 +123,8 @@ class ScenarioGrid : public Scenario {
         // Connections from (init, q)
         for (auto vertex1 : init_vids) {
             for (auto vertex2 : sinit_vids) {
-                const auto ps1 = vid2pstate.at(vertex1);
-                const auto ps2 = vid2pstate.at(vertex2);
+                const auto ps1 = vid2state.at(vertex1);
+                const auto ps2 = vid2state.at(vertex2);
                 graph.addEdge(vertex1, vertex2, getCostFromInit(ps1, ps2));
             }
         }
@@ -165,14 +141,14 @@ class ScenarioGrid : public Scenario {
     }
 
     void addConnectionFrom(const DiscreteProductState2D &ps1) {
-        size_t vertex1 = pstate2vid.at(ps1);
+        size_t vertex1 = state2vid.at(ps1);
         for (const auto &action : actions) {
             DiscreteProductState2D ps2 = ps1 + action;
             if (!world.contain(ps2))
                 continue;
             for (int q = 0; q <= 1; ++q) {
                 ps2.q = q;
-                size_t vertex2 = pstate2vid.at(ps2);
+                size_t vertex2 = state2vid.at(ps2);
                 graph.addEdge(vertex1, vertex2, getCost(ps1, ps2));
             }
         }
@@ -222,13 +198,6 @@ class ScenarioGrid : public Scenario {
                      const DiscreteProductState2D &ps2) {
         return std::sqrt((ps1.x - ps2.x) * (ps1.x - ps2.x) +
                          (ps1.y - ps2.y) * (ps1.y - ps2.y));
-    }
-
-    size_t addState(const DiscreteProductState2D &pstate) {
-        const size_t vid = graph.addVertex();
-        vid2pstate.insert({vid, pstate});
-        pstate2vid.insert({pstate, vid});
-        return vid;
     }
 };
 

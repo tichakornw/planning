@@ -5,15 +5,15 @@
 #include "RulebookCost.h"
 #include "Scenario.h"
 
-class RulebookPlanner : public Planner<RulebookCost> {
+template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
   public:
     using WEdge = WeightedEdge<RulebookCost>;
     using WEdgePtr = std::shared_ptr<WEdge>;
 
-    RulebookPlanner(Scenario &scenario)
+    RulebookPlanner(Scenario<State> &scenario)
         : Planner(scenario.getGraph()), scenario(scenario),
-          rulebook(scenario.getRulebook()), init_vid(scenario.get_init()),
-          goal_vid(scenario.get_goal()) {}
+          rulebook(scenario.getRulebook()), init_vid(scenario.getInit()),
+          goal_vid(scenario.getGoal()) {}
 
     size_t getNumRules() const { return rulebook.getNumRules(); }
 
@@ -80,7 +80,7 @@ class RulebookPlanner : public Planner<RulebookCost> {
     void setDebug(bool d) { debug = d; }
 
   private:
-    const Scenario &scenario;
+    const Scenario<State> &scenario;
     const Rulebook &rulebook;
     const size_t init_vid;
     const size_t goal_vid;

@@ -17,7 +17,7 @@ void testGrid() {
     planner.setDebug(true);
     auto start = std::chrono::high_resolution_clock::now();
     auto edge_path =
-        planner.getOptimalPlan(scenario.getVidQinit(), scenario.getVidQgoal());
+        planner.getOptimalPlan(scenario.getInit(), scenario.getGoal());
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = duration_cast<std::chrono::milliseconds>(stop - start);

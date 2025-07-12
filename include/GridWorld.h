@@ -16,6 +16,8 @@ class DiscreteState2D {
   public:
     int x, y;
 
+    DiscreteState2D() : x(0), y(0) {}
+
     DiscreteState2D(int x_, int y_) : x(x_), y(y_) {}
 
     bool operator==(const DiscreteState2D &other) const {
@@ -38,6 +40,8 @@ class DiscreteState2D {
 class DiscreteProductState2D {
   public:
     int x, y, q;
+
+    DiscreteProductState2D() : x(0), y(0), q(0) {}
 
     DiscreteProductState2D(int x_, int y_, int q_) : x(x_), y(y_), q(q_) {}
 
@@ -95,6 +99,13 @@ template <> struct hash<DiscreteProductState2D> {
     size_t operator()(const DiscreteProductState2D &s) const {
         return ((std::hash<int>()(s.x) ^ (std::hash<int>()(s.y) << 1)) >> 1) ^
                (std::hash<int>()(s.q) << 1);
+    }
+};
+
+template <> struct hash<DiscreteState2D> {
+    std::size_t operator()(const DiscreteState2D &s) const noexcept {
+        // Combine x and y with a simple hash combiner
+        return std::hash<int>()(s.x) ^ (std::hash<int>()(s.y) << 1);
     }
 };
 } // namespace std

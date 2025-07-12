@@ -3,40 +3,39 @@
 
 #include <random>
 
+#include "GridWorld.h"
 #include "Rule.h"
 #include "Rulebook.h"
 #include "RulebookCost.h"
 #include "Scenario.h"
 
-class ScenarioRandom : public Scenario {
+class ScenarioRandom : public Scenario<DiscreteState2D> {
   public:
     ScenarioRandom() {
         num_x = getRandomInt(5, 15);
         num_y = getRandomInt(5, 15);
         num_rules = getRandomInt(2, 10);
+        setRandomInitAndGoal();
+        std::cout << "  Graph size: (" << num_x << ", " << num_y << ")"
+                  << std::endl;
         setup();
     }
 
     ScenarioRandom(size_t num_x, size_t num_y, size_t num_rules)
         : num_x(num_x), num_y(num_y), num_rules(num_rules) {
+        setRandomInitAndGoal();
         setup();
-    }
-
-  protected:
-    void setup() override {
-        std::cout << "  Graph size: (" << num_x << ", " << num_y << ")"
-                  << std::endl;
-        buildRulebook();
-        RulebookCost::setRulebook(rulebook);
-        buildGrid(num_x, num_y);
-        init_vid = getRandomInt(0, (num_x * num_y) - 1);
-        goal_vid = getRandomInt(0, (num_x * num_y) - 1);
     }
 
   private:
     size_t num_x;
     size_t num_y;
     size_t num_rules;
+
+    void setRandomInitAndGoal() {
+        init_vid = getRandomInt(0, (num_x * num_y) - 1);
+        goal_vid = getRandomInt(0, (num_x * num_y) - 1);
+    }
 
     size_t getRandomInt(size_t min_value, size_t max_value) {
         std::random_device rd;  // Obtain a random number from hardware
@@ -93,7 +92,7 @@ class ScenarioRandom : public Scenario {
         return cost;
     }
 
-    void buildRulebook() {
+    void buildRulebook() override {
         for (size_t i = 0; i < num_rules; ++i) {
             const RuleSum r("r" + std::to_string(i));
             rulebook.addRule(r);
@@ -134,10 +133,11 @@ class ScenarioRandom : public Scenario {
         }
 
         rulebook.build();
-        displayRulebook();
+        if (debug)
+            displayRulebook();
     }
 
-    void buildGrid(size_t num_x, size_t num_y) {
+    void buildGraph() override {
         for (size_t vid = 0; vid < num_x * num_y; ++vid) {
             graph.addVertex(vid);
         }
@@ -164,8 +164,10 @@ class ScenarioRandom : public Scenario {
             }
         }
         // Display the graph
-        // std::cout << "Graph: " << std::endl;
-        // graph.display();
+        if (debug) {
+            std::cout << "Graph: " << std::endl;
+            graph.display();
+        }
     }
 };
 

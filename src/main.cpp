@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "GridWorld.h"
 #include "RulebookPlanner.h"
 #include "ScenarioAvoidance.h"
 #include "ScenarioRandom.h"
@@ -15,7 +16,8 @@ struct Arguments {
     size_t refinement = 0;
 };
 
-void addResult(std::unique_ptr<Scenario> scenario, std::ofstream &outdata) {
+void addResult(std::unique_ptr<Scenario<DiscreteState2D>> scenario,
+               std::ofstream &outdata) {
     RulebookPlanner planner(*scenario);
     auto start = high_resolution_clock::now();
     const auto res = planner.getOptimalPlans();
@@ -67,7 +69,7 @@ int main(int argc, char *argv[]) {
         result_file += "avoidance";
     result_file += ".json";
 
-    std::unique_ptr<Scenario> scenario;
+    std::unique_ptr<Scenario<DiscreteState2D>> scenario;
     std::ofstream outdata;
     outdata.open(result_file);
     if (!outdata) {
