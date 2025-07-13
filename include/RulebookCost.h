@@ -8,7 +8,7 @@
 
 class RulebookCost {
   public:
-    RulebookCost() {
+    RulebookCost(double v = 0.0) {
         if (!rulebook) {
             throw std::runtime_error(
                 "Rulebook must be initialized before RulebookCost.");
@@ -17,7 +17,7 @@ class RulebookCost {
         const size_t n = rulebook->getNumRules();
         cost_vector.reserve(n);
         for (size_t i = 0; i < n; ++i) {
-            cost_vector.push_back(rulebook->getRule(i).makeCost(0.0));
+            cost_vector.push_back(rulebook->getRule(i).makeCost(v));
         }
     }
 
@@ -130,6 +130,36 @@ class RulebookCost {
     static std::unique_ptr<Rulebook> rulebook;
     std::vector<std::shared_ptr<RuleCost>> cost_vector;
     double value;
+};
+
+template <> class std::numeric_limits<RulebookCost> {
+  public:
+    static constexpr bool is_specialized = true;
+
+    static RulebookCost max() noexcept {
+        return RulebookCost(std::numeric_limits<double>::max());
+    }
+
+    static RulebookCost min() noexcept {
+        return RulebookCost(std::numeric_limits<double>::lowest());
+    }
+
+    static RulebookCost lowest() noexcept {
+        return RulebookCost(std::numeric_limits<double>::lowest());
+    }
+
+    static constexpr bool is_signed = true;
+    static constexpr bool is_integer = false;
+    static constexpr bool is_exact = false;
+    static constexpr bool has_infinity = false;
+    static constexpr bool has_quiet_NaN = false;
+    static constexpr bool has_signaling_NaN = false;
+    static constexpr std::float_denorm_style has_denorm = std::denorm_absent;
+    static constexpr bool has_denorm_loss = false;
+    static constexpr std::float_round_style round_style = std::round_to_nearest;
+    static constexpr bool is_iec559 = false;
+    static constexpr bool is_bounded = true;
+    static constexpr bool is_modulo = false;
 };
 
 // Make RulebookCost hashable

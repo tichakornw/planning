@@ -7,6 +7,7 @@
 
 template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
   public:
+    using WGraph = WeightedGraph<RulebookCost>;
     using WEdge = WeightedEdge<RulebookCost>;
     using WEdgePtr = std::shared_ptr<WEdge>;
 
@@ -68,6 +69,11 @@ template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
         return opt_subgraph.getPath(init_vid, goal_vid);
     }
 
+    std::vector<WEdgePtr> getDijkstraPlan(size_t init_vid,
+                                          size_t goal_vid) const {
+        return graph.getDijkstraPath(init_vid, goal_vid);
+    }
+
     OptimalSet<std::vector<WEdgePtr>, RulebookCost> getOptimalPlans() const {
         return getOptimalPlans(init_vid, goal_vid);
     }
@@ -86,7 +92,7 @@ template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
     const size_t goal_vid;
     // Make optimal_subgraph a class member to keep it alive
     // so that edges returned by getOptimalPlan will be valid after the call
-    mutable WeightedGraph<RulebookCost> opt_subgraph;
+    mutable WGraph opt_subgraph;
     bool debug = false;
 };
 

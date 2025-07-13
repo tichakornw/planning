@@ -58,7 +58,7 @@ void testSubgraph() {
     std::cout << "Graph:" << std::endl;
     graph.display();
 
-    graph.reduceToOptimalSubgraph<double>(1, 3);
+    graph.reduceToOptimalSubgraph(1, 3);
     std::cout << "Optimal subgraph:" << std::endl;
     graph.display();
     assert(graph.is_consistent());

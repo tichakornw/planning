@@ -159,14 +159,51 @@ template <typename CostType> class WeightedGraph : public Graph {
         return weighted_path;
     }
 
+    std::vector<WEdgePtr> getDijkstraPath(size_t from, size_t to) const {
+        auto vI = getVertex(from);
+        auto vG = getVertex(to);
+        if (!vI || !vG)
+            throw std::invalid_argument("Invalid initial or goal vertex");
+
+        const auto cost_to_come = this->getCostToComeFrom<CostType>(
+            vI, false, [](const CostType &c) { return c; });
+
+        std::vector<WEdgePtr> path;
+        std::shared_ptr<Vertex> current = vG;
+
+        while (current != vI) {
+            bool found = false;
+            for (const auto &edge : current->in_edges) {
+                auto wedge = std::dynamic_pointer_cast<WEdge>(edge);
+                auto u = wedge->from;
+                if (cost_to_come.count(u->vid) &&
+                    cost_to_come.at(current->vid) ==
+                        cost_to_come.at(u->vid) + wedge->cost) {
+                    path.push_back(wedge);
+                    current = u;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw std::runtime_error("No valid predecessor found.");
+            }
+        }
+
+        std::reverse(path.begin(), path.end());
+        return path;
+    }
+
+    CostType reduceToOptimalSubgraph(size_t from, size_t to) {
+        return reduceToOptimalSubgraph<CostType>(
+            from, to, [](const CostType &c) { return c; });
+    }
+
     template <
         typename SubCostType = CostType,
         typename GetSubCost = std::function<SubCostType(const CostType &)>>
-    SubCostType reduceToOptimalSubgraph(
-        size_t from, size_t to,
-        const GetSubCost &getSubCost = [](const CostType &cost) {
-            return cost;
-        }) {
+    SubCostType reduceToOptimalSubgraph(size_t from, size_t to,
+                                        const GetSubCost &getSubCost) {
         auto [cost_to_come, cost_to_go, optimal_cost] =
             computeOptimalCostInfo<SubCostType>(from, to, getSubCost);
         auto is_edge_optimal = makeOptimalityChecker(cost_to_come, cost_to_go,
@@ -192,14 +229,18 @@ template <typename CostType> class WeightedGraph : public Graph {
         return optimal_cost;
     }
 
+    WeightedGraph<CostType> extractOptimalSubgraph(size_t from,
+                                                   size_t to) const {
+        return extractOptimalSubgraph<CostType>(
+            from, to, [](const CostType &c) { return c; });
+    }
+
     template <
         typename SubCostType = CostType,
         typename GetSubCost = std::function<SubCostType(const CostType &)>>
-    WeightedGraph<CostType> extractOptimalSubgraph(
-        size_t from, size_t to,
-        const GetSubCost &getSubCost = [](const CostType &cost) {
-            return cost;
-        }) const {
+    WeightedGraph<CostType>
+    extractOptimalSubgraph(size_t from, size_t to,
+                           const GetSubCost &getSubCost) const {
         auto [cost_to_come, cost_to_go, optimal_cost] =
             computeOptimalCostInfo<SubCostType>(from, to, getSubCost);
         auto is_edge_optimal = makeOptimalityChecker(cost_to_come, cost_to_go,
@@ -297,7 +338,7 @@ template <typename CostType> class WeightedGraph : public Graph {
             size_t to_id = wedge->to->vid;
             SubCostType total = cost_to_come.at(from_id) +
                                 getSubCost(wedge->cost) + cost_to_go.at(to_id);
-            return total <= optimal_cost + 1e-9;
+            return total <= optimal_cost + SubCostType(1e-9);
         };
     }
 
@@ -340,10 +381,11 @@ template <typename CostType> class WeightedGraph : public Graph {
         Q.swap(newQueue);
     }
 
-    template <typename SubCostType>
-    std::unordered_map<size_t, SubCostType> getCostToComeFrom(
-        const VertexPtr vI, bool reverse_graph,
-        std::function<SubCostType(const CostType &)> getSubCost) const {
+    template <typename SubCostType, typename GetSubCost = std::function<
+                                        SubCostType(const CostType &)>>
+    std::unordered_map<size_t, SubCostType>
+    getCostToComeFrom(const VertexPtr vI, bool reverse_graph,
+                      const GetSubCost &getSubCost) const {
         std::unordered_map<size_t, SubCostType> cost_to_come;
 
         // Initialize all costs to "infinity"
