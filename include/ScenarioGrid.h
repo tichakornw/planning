@@ -15,12 +15,14 @@ class ScenarioGrid : public Scenario<DiscreteProductState2D> {
     using WEdge = WeightedEdge<RulebookCost>;
     using WEdgePtr = std::shared_ptr<WEdge>;
 
-    ScenarioGrid()
-        : Scenario<DiscreteProductState2D>(DiscreteProductState2D(0, 0, 0),
-                                           DiscreteProductState2D(4, 5, 1)),
-          world(1, 5, 1, 5), p1_region(2, 3, 2, 2), p2_region(4, 4, 4, 4),
-          obs_region(1, 3, 4, 4), obs_clearance(2), qmin(0), qmax(1),
-          sinit(1, 2) {
+    ScenarioGrid(int xmax = 5, int ymax = 5)
+        : Scenario<DiscreteProductState2D>(
+              DiscreteProductState2D(0, 0, 0),
+              DiscreteProductState2D(xmax - 1, ymax, 1)),
+          world(1, xmax, 1, ymax), p1_region(2, xmax - 2, 2, ymax - 3),
+          p2_region(xmax - 1, xmax - 1, ymax - 1, ymax - 1),
+          obs_region(1, xmax - 2, ymax - 1, ymax - 1), obs_clearance(2),
+          qmin(0), qmax(1), sinit(1, 2) {
         assert(init_state.q >= qmin);
         assert(init_state.q <= qmax);
         assert(goal_state.q >= qmin);
