@@ -4,7 +4,6 @@
 #include "RulebookCost.h"
 
 void testRulebookCost(const Rulebook &rulebook) {
-    std::cout << "Testing RulebookCost ..." << std::endl;
     RulebookCost::setRulebook(rulebook);
     RulebookCost cost1;
     RulebookCost cost2;
@@ -26,13 +25,9 @@ void testRulebookCost(const Rulebook &rulebook) {
     RulebookCost cost3 = cost1 + cost2;
     assert(cost3[0]->getValue() == 3);
     assert(cost3[1]->getValue() == 2);
-
-    std::cout << "Done" << std::endl;
 }
 
 void testRulebookCost2() {
-    std::cout << "Testing RulebookCost2 ..." << std::endl;
-
     Rulebook rulebook;
     rulebook.addRule(RuleSum("r0"));
     rulebook.addRule(RuleSum("r1"));
@@ -50,5 +45,4 @@ void testRulebookCost2() {
 
     assert(cost44 <= cost1111);
     assert(cost44 < cost1111);
-    std::cout << "Done" << std::endl;
 }

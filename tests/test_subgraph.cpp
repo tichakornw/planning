@@ -34,7 +34,6 @@ bool haveSameEdges(const WeightedGraph<CostType> &g1,
 }
 
 void testSubgraph() {
-    std::cout << "Testing Subgraph ..." << std::endl;
     WeightedGraph<double> graph;
 
     // Add vertices
@@ -78,11 +77,9 @@ void testSubgraph() {
     }
 
     assert(actual_edges == expected_edges);
-    std::cout << "Done" << std::endl;
 }
 
 void testSubgraphRulebook() {
-    std::cout << "Testing Subgraph with Rulebook ..." << std::endl;
     using WGraph = WeightedGraph<RulebookCost>;
     WGraph graph;
 
@@ -181,6 +178,4 @@ void testSubgraphRulebook() {
     assert(path2.size() == 2);
     assert(path2[0]->from->vid == 0 && path2[0]->to->vid == 3);
     assert(path2[1]->from->vid == 3 && path2[1]->to->vid == 2);
-
-    std::cout << "Done" << std::endl;
 }

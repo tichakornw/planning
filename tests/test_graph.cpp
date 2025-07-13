@@ -36,7 +36,6 @@ bool checkTopologicalSort(const Graph &graph,
 }
 
 void testGraph() {
-    std::cout << "Testing Graph ..." << std::endl;
     Graph graph;
 
     // Add vertices
@@ -65,11 +64,9 @@ void testGraph() {
     std::cout << std::endl;
 
     assert(checkTopologicalSort(graph, sorted_vertices));
-    std::cout << "Done" << std::endl;
 }
 
 void testWeightedGraph() {
-    std::cout << "Testing WeightedGraph ..." << std::endl;
     WeightedGraph<double> graph;
 
     // Add vertices
@@ -98,11 +95,9 @@ void testWeightedGraph() {
     std::cout << std::endl;
 
     assert(checkTopologicalSort(graph, sorted_vertices));
-    std::cout << "Done" << std::endl;
 }
 
 void testIsDAG() {
-    std::cout << "Testing graph.isDAG ..." << std::endl;
     Graph g;
 
     // DAG: 1 -> 2 -> 3
@@ -117,12 +112,9 @@ void testIsDAG() {
     // Add a cycle: 3 -> 1
     g.addEdge(3, 1, 3);
     assert(!g.isDAG());
-
-    std::cout << "Done" << std::endl;
 }
 
 void testGetPath() {
-    std::cout << "Testing graph.getPath ..." << std::endl;
     Graph g;
 
     g.addVertex(1);
@@ -145,12 +137,9 @@ void testGetPath() {
 
     auto no_path = g.getPath(4, 1);
     assert(no_path.empty());
-
-    std::cout << "Done" << std::endl;
 }
 
 void testIsTotallyOrdered() {
-    std::cout << "Testing graph.isTotallyOrdered ..." << std::endl;
     Graph g;
 
     // Total order: 10 -> 20 -> 30 -> 40
@@ -171,6 +160,4 @@ void testIsTotallyOrdered() {
 
     assert(g.isDAG());
     assert(!g.isTotallyOrdered());
-
-    std::cout << "Done" << std::endl;
 }

@@ -5,7 +5,6 @@
 #include "Rulebook.h"
 
 void testRules() {
-    std::cout << "Testing Rules ..." << std::endl;
     RuleSum rsum("sumRule");
     auto a_ptr = rsum.makeCost(3.0);
     auto b_ptr = rsum.makeCost(4.0);
@@ -32,11 +31,9 @@ void testRules() {
     const RuleCost &v = *z;
     const auto u = v + w;
     assert(u->getValue() == 9.1);
-    std::cout << "Done" << std::endl;
 }
 
 Rulebook testRulebook(bool verbose = false) {
-    std::cout << "Testing Rulebook ..." << std::endl;
     Rulebook rulebook;
 
     RuleSum r0("r0");
@@ -123,6 +120,5 @@ Rulebook testRulebook(bool verbose = false) {
             std::cout << std::endl;
         }
     }
-    std::cout << "Done" << std::endl;
     return rulebook;
 }

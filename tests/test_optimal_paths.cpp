@@ -6,7 +6,6 @@
 #include "WeightedGraph.h"
 
 void testOptimalPaths() {
-    std::cout << "Testing OptimalPaths ..." << std::endl;
     Rulebook rulebook;
 
     rulebook.addRule(RuleSum("r0"));
@@ -66,5 +65,4 @@ void testOptimalPaths() {
     }
 
     std::cout << "Optimal set: " << optimal_set << std::endl;
-    std::cout << "Done" << std::endl;
 }

@@ -83,7 +83,6 @@ std::set<PathWithCost, PathWithCostComparator> extractPathWithCostSet(
 }
 
 void testAvoidance() {
-    std::cout << "Testing Avoidance ..." << std::endl;
     ScenarioAvoidance scenario;
     RulebookPlanner planner(scenario);
     auto start = std::chrono::high_resolution_clock::now();
@@ -142,5 +141,4 @@ void testAvoidance() {
     };
 
     assert(actual == expected);
-    std::cout << "Done" << std::endl;
 }

@@ -16,8 +16,6 @@ void plan(ScenarioRandom &scenario) {
 }
 
 void testRandom() {
-    std::cout << "Testing Random Scenario ..." << std::endl;
-
     const size_t max_grid = 8;
     const size_t max_rules = 5;
 
@@ -32,6 +30,4 @@ void testRandom() {
         ScenarioRandom scenario(10, 10, num_rules);
         plan(scenario);
     }
-
-    std::cout << "Done" << std::endl;
 }

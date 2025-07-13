@@ -6,7 +6,6 @@
 #include "Plan.h"
 
 void testOptimalSet() {
-    std::cout << "Testing OptimalSet ..." << std::endl;
     OptimalSet<Plan, double> optimal_set;
     std::vector<int> element1 = {1, 2, 3};
     std::vector<int> element2 = {2, 2, 4};
@@ -39,5 +38,4 @@ void testOptimalSet() {
 
     // Print the elements in the optimal set
     std::cout << optimal_set << std::endl;
-    std::cout << "Done" << std::endl;
 }

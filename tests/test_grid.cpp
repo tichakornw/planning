@@ -54,7 +54,6 @@ void testGridPlanner(bool iterated,
 }
 
 void testGrid() {
-    std::cout << "Testing grid world ..." << std::endl;
     std::cout << "Iterated Dijkstra's" << std::endl;
     const std::vector<DiscreteProductState2D> expected_optimal_path_iterated = {
         {0, 0, 0}, {1, 2, 0}, {1, 3, 0}, {2, 3, 0},
@@ -66,6 +65,4 @@ void testGrid() {
         {0, 0, 0}, {1, 2, 0}, {1, 1, 0}, {2, 1, 0}, {3, 1, 0},
         {4, 1, 0}, {4, 2, 0}, {4, 3, 0}, {4, 4, 1}, {4, 5, 1}};
     testGridPlanner(false, expected_optimal_path_dijkstra);
-
-    std::cout << "Done" << std::endl;
 }
