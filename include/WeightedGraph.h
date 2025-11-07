@@ -6,6 +6,8 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <queue>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -262,6 +264,79 @@ template <typename CostType> class WeightedGraph : public Graph {
     }
 
     OptimalSet<std::vector<WEdgePtr>, CostType>
+    getOptimalPathsWithPQ(size_t from, size_t to) const {
+        const auto vI = getVertex(from);
+        const auto vG = getVertex(to);
+        if (!vI || !vG || edges.empty())
+            return OptimalSet<std::vector<WEdgePtr>, CostType>();
+
+        size_t n = 0;
+
+        // Initialize optimal_paths
+        const auto wedge0 = std::dynamic_pointer_cast<WEdge>(edges[0]);
+        const CostType zero_cost = wedge0->cost.getZero();
+
+        std::unordered_map<VertexPtr,
+                           OptimalSet<std::vector<WEdgePtr>, CostType>>
+            optimal_paths;
+        for (const auto &pair : vertices) {
+            optimal_paths[pair.second] =
+                OptimalSet<std::vector<WEdgePtr>, CostType>();
+            if (pair.second == vI)
+                optimal_paths[pair.second].insert(std::vector<WEdgePtr>(),
+                                                  zero_cost, n);
+        }
+
+        // Initialize maps
+        std::unordered_map<size_t, VertexPtr> vertices_t2g;
+
+        Graph ST;
+        ST.addVertex(n);
+        vertices_t2g[n] = vI;
+
+        // Set up priority queue
+        std::priority_queue<QueueElem, std::vector<QueueElem>,
+                            std::greater<QueueElem>>
+            Q;
+        Q.push({n, zero_cost});
+
+        while (!Q.empty()) {
+            auto [vtid, curr_cost] = Q.top();
+            Q.pop();
+
+            const auto current_vertex = vertices_t2g[vtid];
+            const auto current_path_with_cost =
+                optimal_paths[current_vertex].getElement(vtid);
+
+            for (const auto &edge : current_vertex->out_edges) {
+                const auto wedge = std::dynamic_pointer_cast<WEdge>(edge);
+                const auto next_vertex = edge->to;
+
+                std::vector<WEdgePtr> next_path =
+                    current_path_with_cost.element;
+                next_path.push_back(wedge);
+                const auto next_cost =
+                    current_path_with_cost.cost + wedge->cost;
+
+                const std::unordered_set<size_t> removed_vtids =
+                    optimal_paths[next_vertex].insert(next_path, next_cost,
+                                                      n + 1);
+                removeElementsFromQueue(Q, removed_vtids);
+
+                if (optimal_paths[next_vertex].isIn(n + 1)) {
+                    ++n;
+                    ST.addVertex(n);
+                    ST.addEdge(vtid, n, edge->eid);
+                    vertices_t2g[n] = next_vertex;
+                    Q.push({n, next_cost});
+                }
+            }
+        }
+
+        return optimal_paths[vG];
+    }
+
+    OptimalSet<std::vector<WEdgePtr>, CostType>
     getOptimalPaths(size_t from, size_t to) const {
         const auto vI = getVertex(from);
         const auto vG = getVertex(to);
@@ -291,6 +366,7 @@ template <typename CostType> class WeightedGraph : public Graph {
         Graph ST;
         ST.addVertex(n);
         vertices_t2g[n] = vI;
+
         std::queue<size_t> Q;
         Q.push(n);
 
@@ -327,6 +403,15 @@ template <typename CostType> class WeightedGraph : public Graph {
     }
 
   private:
+    struct QueueElem {
+        size_t vtid;
+        CostType cost;
+
+        bool operator>(const QueueElem &other) const {
+            return cost > other.cost;
+        }
+    };
+
     template <typename SubCostType, typename GetSubCost = std::function<
                                         SubCostType(const CostType &)>>
     std::function<bool(const WEdgePtr &)> makeOptimalityChecker(
@@ -360,6 +445,25 @@ template <typename CostType> class WeightedGraph : public Graph {
         const auto optimal_cost = cost_to_come.at(to);
 
         return {cost_to_come, cost_to_go, optimal_cost};
+    }
+
+    void removeElementsFromQueue(
+        std::priority_queue<QueueElem, std::vector<QueueElem>,
+                            std::greater<QueueElem>> &Q,
+        const std::unordered_set<size_t> &to_remove) const {
+        std::priority_queue<QueueElem, std::vector<QueueElem>,
+                            std::greater<QueueElem>>
+            newQueue;
+
+        while (!Q.empty()) {
+            QueueElem elem = Q.top();
+            Q.pop();
+            if (to_remove.find(elem.vtid) == to_remove.end()) {
+                newQueue.push(elem);
+            }
+        }
+
+        Q.swap(newQueue);
     }
 
     void
