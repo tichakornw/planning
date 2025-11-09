@@ -20,7 +20,7 @@ class Vertex {
 
     Vertex(size_t vid) : vid(vid) {}
 
-    ~Vertex() {
+    virtual ~Vertex() {
         assert(in_edges.empty() && "in_edges not cleared");
         assert(out_edges.empty() && "out_edges not cleared");
     }

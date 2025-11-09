@@ -156,6 +156,7 @@ class Graph {
     }
 
     [[nodiscard]] size_t getNumVertices() const { return vertices.size(); }
+    [[nodiscard]] size_t getNumEdges() const { return edges.size(); }
 
     [[nodiscard]] std::unordered_set<size_t>
     findSuccessors(size_t start_id) const {

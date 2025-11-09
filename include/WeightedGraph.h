@@ -106,8 +106,8 @@ template <typename CostType> class WeightedGraph : public Graph {
 
     void addEdge(size_t from, size_t to, const CostType &cost, size_t eid,
                  bool allow_duplicate = true) {
-        auto v1 = getVertex(from);
-        auto v2 = getVertex(to);
+        auto v1 = this->getVertex(from);
+        auto v2 = this->getVertex(to);
 
         if (!v1)
             std::cout << "Can't find from vertex " << from << std::endl;
@@ -141,7 +141,7 @@ template <typename CostType> class WeightedGraph : public Graph {
         }
     }
 
-    std::vector<WEdgePtr> getPath(size_t from, size_t to) {
+    std::vector<WEdgePtr> getPath(size_t from, size_t to) const {
         // Call base Graph's method
         const auto base_path = Graph::getPath(from, to);
 
