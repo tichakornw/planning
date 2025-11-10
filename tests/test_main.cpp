@@ -7,6 +7,28 @@
 
 #include "Rulebook.h"
 
+// From examples/grid.cpp
+void testGrid();
+
+// From test_navigation.cpp
+void testNavigationCost();
+
+// From test_world2d
+void testWorld2DGeometry();
+
+// From test_rrt_star
+void testRRTStar();
+
+// From test_state_tree
+void testStateTree();
+
+// From test_state_graph.cpp
+void testStateVertexEdge();
+void testStateGraph();
+
+// From test_linear_transition.cpp
+void testLinearTransition();
+
 // From test_graph.cpp
 void testGraph();
 void testWeightedGraph();
@@ -38,9 +60,6 @@ void testAvoidance();
 // From test_random.cpp
 void testRandom();
 
-// From test_grid.cpp
-void testGrid();
-
 struct NamedTest {
     std::string name; // Proper capitalization
     std::function<void()> func;
@@ -55,6 +74,13 @@ std::string toLower(const std::string &str) {
 
 int main(int argc, char *argv[]) {
     std::vector<NamedTest> test_list = {
+        {"NavigationCost", testNavigationCost},
+        {"World2DGeometry", testWorld2DGeometry},
+        {"RRTStar", testRRTStar},
+        {"StateTree", testStateTree},
+        {"StateGraph", testStateGraph},
+        {"StateVertexEdge", testStateVertexEdge},
+        {"LinearTransition", testLinearTransition},
         {"Graph", testGraph},
         {"WeightedGraph", testWeightedGraph},
         {"IsDAG", testIsDAG},
