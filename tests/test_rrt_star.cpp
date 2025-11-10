@@ -16,8 +16,6 @@ void testRRTStar() {
     using Transition = LinearTransition<State>;
     using Cost = double;
 
-    using SVertex = StateVertex<State>;
-
     // 2. Define cost and collision functions
     auto cost_fn = [](const Transition &tr) { return tr.getLength(); };
     auto collision_fn = [&](const Transition &tr) {
@@ -67,12 +65,10 @@ void testRRTStar() {
         assert(v->in_edges.size() == 1 &&
                "Each vertex must have exactly one parent edge in StateTree");
 
-        auto edge = std::dynamic_pointer_cast<
-            StateTransitionEdge<Point2D, double, LinearTransition<Point2D>>>(
-            v->in_edges.front());
+        auto edge = tree.getParentEdge(i);
         assert(edge && "Edge must be a StateTransitionEdge");
 
-        auto parent = std::dynamic_pointer_cast<SVertex>(edge->from);
+        auto parent = edge->from;
         double c_parent = tree.getCostToCome(parent->vid);
         double c_child = tree.getCostToCome(v->vid);
         double expected = c_parent + edge->cost;

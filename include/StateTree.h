@@ -7,6 +7,26 @@
 #include <stdexcept>
 #include <unordered_map>
 
+/**
+ * @brief A directed acyclic tree built on top of StateGraph, maintaining
+ *        parent-child relationships and cost-to-come values.
+ *
+ * @tparam State           Type representing a configuration or position in the
+ * state space
+ * @tparam CostType        Numeric type for edge and cumulative path costs
+ * @tparam StateTransition Type representing a valid motion between two states
+ *
+ * This class extends StateGraph by enforcing the *tree property*:
+ *  - Each vertex (except the root) has exactly one parent.
+ *  - Edges implicitly encode a parent → child hierarchy.
+ *
+ * Additionally, it maintains:
+ *  - A mapping from each vertex to its parent (`parent_of_`).
+ *  - The cost-to-come (`g-value`) from the root for each vertex.
+ *
+ * The tree supports RRT* operations such as rewiring and dynamic cost
+ * propagation.
+ */
 template <typename State, typename CostType, typename StateTransition>
 class StateTree : public StateGraph<State, CostType, StateTransition> {
   public:
@@ -19,6 +39,7 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
   private:
     // child -> parent mapping
     std::unordered_map<size_t, size_t> parent_of_;
+
     // cost-to-come (g value)
     std::unordered_map<size_t, CostType> cost_to_come_;
 
@@ -26,9 +47,12 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
     StateTree() = default;
     ~StateTree() override = default;
 
-    // -----------------------------------------------------------
-    // Add vertex with default cost-to-come = infinity
-    // -----------------------------------------------------------
+    /**
+     * @brief Add a new vertex to the tree.
+     * @param state   The state to insert.
+     * @param is_root Whether this vertex is the root (g=0).
+     * @return The vertex ID of the newly added state.
+     */
     size_t addStateVertex(const State &state, bool is_root = false) {
         size_t vid = Base::addStateVertex(state);
         cost_to_come_[vid] =
@@ -37,9 +61,16 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
         return vid;
     }
 
-    // -----------------------------------------------------------
-    // Add edge ensuring tree property and updating costs
-    // -----------------------------------------------------------
+    /**
+     * @brief Add a new directed edge from `from` -> `to` and update
+     * cost-to-come.
+     *
+     * Ensures that each vertex has only one parent (tree structure).
+     * Optionally checks for cycles if desired.
+     *
+     * @throws std::runtime_error if attempting to connect an existing child,
+     *         create a self-loop, or introduce a cycle.
+     */
     size_t addStateTransition(size_t from, size_t to, const CostType &cost,
                               const StateTransition &transition,
                               bool allow_duplicate = true,
@@ -64,9 +95,60 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
         return eid;
     }
 
-    // -----------------------------------------------------------
-    // Rewire (RRT* style)
-    // -----------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Tree Structure Queries
+    // -------------------------------------------------------------------------
+
+    /**
+     * @brief Retrieve the edge from a vertex’s parent to itself.
+     * @return Shared pointer to the parent edge, or nullptr if none exists.
+     */
+    std::shared_ptr<StateTransitionEdge<State, CostType, StateTransition>>
+    getParentEdge(size_t vid) const {
+        auto v = this->getStateVertex(vid);
+        if (!v || v->in_edges.empty())
+            return nullptr;
+        assert(v->in_edges.size() == 1);
+        return std::dynamic_pointer_cast<
+            StateTransitionEdge<State, CostType, StateTransition>>(
+            v->in_edges.front());
+    }
+
+    /**
+     * @brief Get the parent vertex of a given node.
+     * @return Shared pointer to the parent vertex, or nullptr if root.
+     */
+    SVertexPtr getParent(size_t vid) const {
+        auto it = parent_of_.find(vid);
+        if (it == parent_of_.end())
+            return nullptr;
+        return this->getStateVertex(it->second);
+    }
+
+    /**
+     * @brief Get the accumulated cost-to-come from the root.
+     */
+    CostType getCostToCome(size_t vid) const {
+        auto it = cost_to_come_.find(vid);
+        return (it != cost_to_come_.end())
+                   ? it->second
+                   : std::numeric_limits<CostType>::infinity();
+    }
+
+    /** @brief Return true if the vertex is the root (no parent). */
+    bool isRoot(size_t vid) const { return !parent_of_.count(vid); }
+
+    // -------------------------------------------------------------------------
+    // Rewiring (RRT* operation)
+    // -------------------------------------------------------------------------
+
+    /**
+     * @brief Change a node’s parent and update costs recursively.
+     *
+     * Used in RRT* when a shorter path to a node is discovered.
+     * Automatically removes the old edge, inserts the new one, and
+     * propagates cost-to-come updates to all descendants.
+     */
     void rewire(size_t new_parent, size_t child, const CostType &new_cost,
                 const StateTransition &new_transition,
                 bool check_cycle = false) {
@@ -115,28 +197,11 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
         propagateCostUpdate(child_v, new_g);
     }
 
-    // -----------------------------------------------------------
-    // Accessors
-    // -----------------------------------------------------------
-    SVertexPtr getParent(size_t vid) const {
-        auto it = parent_of_.find(vid);
-        if (it == parent_of_.end())
-            return nullptr;
-        return this->getStateVertex(it->second);
-    }
+    // -------------------------------------------------------------------------
+    // Debugging / Visualization
+    // -------------------------------------------------------------------------
 
-    CostType getCostToCome(size_t vid) const {
-        auto it = cost_to_come_.find(vid);
-        return (it != cost_to_come_.end())
-                   ? it->second
-                   : std::numeric_limits<CostType>::infinity();
-    }
-
-    bool isRoot(size_t vid) const { return !parent_of_.count(vid); }
-
-    // -----------------------------------------------------------
-    // Debug
-    // -----------------------------------------------------------
+    /** @brief Print the tree structure and cost-to-come of all vertices. */
     void printTree() const {
         std::cout << "StateTree:\n";
         for (auto &[vid, vertex] : this->vertices) {
@@ -151,6 +216,15 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
     }
 
   private:
+    // -------------------------------------------------------------------------
+    // Internal Utilities
+    // -------------------------------------------------------------------------
+
+    /**
+     * @brief Detect if adding an edge from → to would create a cycle.
+     *
+     * Used defensively when building or rewiring the tree.
+     */
     bool createsCycle(size_t from, size_t to) const {
         size_t current = from;
         while (parent_of_.count(current)) {
@@ -161,7 +235,11 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
         return false;
     }
 
-    // Recursively propagate cost update to all descendants
+    /**
+     * @brief Recursively propagate a cost update through all descendants.
+     *
+     * Called after rewiring to maintain consistent g-values across the tree.
+     */
     void propagateCostUpdate(const SVertexPtr &vertex, CostType new_cost) {
         cost_to_come_[vertex->vid] = new_cost;
         for (auto &edge : vertex->out_edges) {
