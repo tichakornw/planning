@@ -7,16 +7,16 @@
 #include "Rule.h"
 #include "Rulebook.h"
 #include "RulebookCost.h"
-#include "Scenario.h"
+#include "ScenarioDiscrete.h"
 #include "WeightedGraph.h"
 
-class ScenarioGrid : public Scenario<DiscreteProductState2D> {
+class ScenarioGrid : public ScenarioDiscrete<DiscreteProductState2D> {
   public:
     using WEdge = WeightedEdge<RulebookCost>;
     using WEdgePtr = std::shared_ptr<WEdge>;
 
     ScenarioGrid(int xmax = 5, int ymax = 5)
-        : Scenario<DiscreteProductState2D>(
+        : ScenarioDiscrete<DiscreteProductState2D>(
               DiscreteProductState2D(0, 0, 0),
               DiscreteProductState2D(xmax - 1, ymax, 1)),
           world(1, xmax, 1, ymax), p1_region(2, xmax - 2, 2, ymax - 3),

@@ -7,9 +7,9 @@
 #include "Rule.h"
 #include "Rulebook.h"
 #include "RulebookCost.h"
-#include "Scenario.h"
+#include "ScenarioDiscrete.h"
 
-class ScenarioRandom : public Scenario<DiscreteState2D> {
+class ScenarioRandom : public ScenarioDiscrete<DiscreteState2D> {
   public:
     ScenarioRandom() {
         num_x = getRandomInt(5, 15);

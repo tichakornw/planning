@@ -3,7 +3,7 @@
 
 #include "Planner.h"
 #include "RulebookCost.h"
-#include "Scenario.h"
+#include "ScenarioDiscrete.h"
 
 template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
   public:
@@ -11,7 +11,7 @@ template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
     using WEdge = WeightedEdge<RulebookCost>;
     using WEdgePtr = std::shared_ptr<WEdge>;
 
-    RulebookPlanner(Scenario<State> &scenario)
+    RulebookPlanner(ScenarioDiscrete<State> &scenario)
         : Planner(scenario.getGraph()), scenario(scenario),
           rulebook(scenario.getRulebook()), init_vid(scenario.getInit()),
           goal_vid(scenario.getGoal()) {}
@@ -86,7 +86,7 @@ template <typename State> class RulebookPlanner : public Planner<RulebookCost> {
     void setDebug(bool d) { debug = d; }
 
   private:
-    const Scenario<State> &scenario;
+    const ScenarioDiscrete<State> &scenario;
     const Rulebook &rulebook;
     const size_t init_vid;
     const size_t goal_vid;

@@ -7,13 +7,13 @@
 #include "Rule.h"
 #include "Rulebook.h"
 #include "RulebookCost.h"
-#include "Scenario.h"
+#include "ScenarioDiscrete.h"
 
-class ScenarioAvoidance : public Scenario<DiscreteState2D> {
+class ScenarioAvoidance : public ScenarioDiscrete<DiscreteState2D> {
   public:
     ScenarioAvoidance(size_t refinement_option = 0)
-        : Scenario<DiscreteState2D>(DiscreteState2D(1, 1),
-                                    DiscreteState2D(7, 1)),
+        : ScenarioDiscrete<DiscreteState2D>(DiscreteState2D(1, 1),
+                                            DiscreteState2D(7, 1)),
           refinement_option(refinement_option) {
         setup();
     }
