@@ -84,7 +84,7 @@ class ScenarioGrid : public ScenarioDiscrete<DiscreteProductState2D> {
     // all vids for product states (init, q)
     std::vector<size_t> init_vids;
 
-    void buildRulebook() override {
+    void defineRulebook() override {
         const RuleSum r0("ltl");
         const RuleMax r1("obs");
         const RuleSum r2("len");
@@ -95,11 +95,6 @@ class ScenarioGrid : public ScenarioDiscrete<DiscreteProductState2D> {
 
         rulebook.addGTRelation(rid_ltl, rid_obs);
         rulebook.addGTRelation(rid_obs, rid_len);
-
-        rulebook.build();
-
-        if (debug)
-            displayRulebook();
     }
 
     void buildGraph() override {

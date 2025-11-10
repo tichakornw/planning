@@ -92,7 +92,7 @@ class ScenarioRandom : public ScenarioDiscrete<DiscreteState2D> {
         return cost;
     }
 
-    void buildRulebook() override {
+    void defineRulebook() override {
         for (size_t i = 0; i < num_rules; ++i) {
             const RuleSum r("r" + std::to_string(i));
             rulebook.addRule(r);
@@ -131,10 +131,6 @@ class ScenarioRandom : public ScenarioDiscrete<DiscreteState2D> {
                 }
             }
         }
-
-        rulebook.build();
-        if (debug)
-            displayRulebook();
     }
 
     void buildGraph() override {

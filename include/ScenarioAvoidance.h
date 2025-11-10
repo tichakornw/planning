@@ -27,7 +27,7 @@ class ScenarioAvoidance : public ScenarioDiscrete<DiscreteState2D> {
     // IDs of the rules
     size_t rid_blockage, rid_lane, rid_clearance, rid_length;
 
-    void buildRulebook() override {
+    void defineRulebook() override {
         const RuleSum r0("blockage");
         const RuleSum r1("lane");
         const RuleSum r2("clearance");
@@ -51,11 +51,6 @@ class ScenarioAvoidance : public ScenarioDiscrete<DiscreteState2D> {
 
         if (refinement_option == 2)
             rulebook.addGTRelation(rid_clearance, rid_lane);
-
-        rulebook.build();
-
-        if (debug)
-            displayRulebook();
     }
 
     void buildGraph() override {

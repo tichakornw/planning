@@ -31,11 +31,18 @@ template <typename State> class Scenario {
     bool debug = false;
 
     // Pure virtual function to be implemented by derived classes.
-    virtual void buildRulebook() = 0;
+    virtual void defineRulebook() = 0;
 
     virtual void setup() {
         buildRulebook();
         RulebookCost::setRulebook(rulebook);
+    }
+
+    void buildRulebook() {
+        defineRulebook();
+        rulebook.build();
+        if (debug)
+            displayRulebook();
     }
 
     void displayRulebook() {
