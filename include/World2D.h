@@ -322,6 +322,31 @@ class World2D {
         : xmin(xmin_), xmax(xmax_), ymin(ymin_), ymax(ymax_) {}
 
     /**
+     * @brief Add a circular obstacle to the world.
+     * @param center Center point of the obstacle.
+     * @param radius Radius of the obstacle.
+     */
+    void addObstacle(const Point2D &center, double radius) {
+        obstacles.emplace_back(center, radius);
+    }
+
+    /**
+     * @brief Add a rectangular region (e.g., busy or restricted zone).
+     * @param xmin Minimum x boundary.
+     * @param ymin Minimum y boundary.
+     * @param xmax Maximum x boundary.
+     * @param ymax Maximum y boundary.
+     */
+    void addRegion(double xmin, double xmax, double ymin, double ymax) {
+        regions.emplace_back(xmin, xmax, ymin, ymax);
+    }
+
+    /**
+     * @brief Add a rectangular region using an existing RectangleRegion object.
+     */
+    void addRegion(const RectangleRegion &region) { regions.push_back(region); }
+
+    /**
      * @brief Check if a point lies inside any circular obstacle.
      */
     bool isInsideObstacle(const State &p) const {
