@@ -25,6 +25,15 @@ class RulebookCost {
         cost_vector[rule_index]->setValue(cost);
     }
 
+    double getRuleCost(size_t index) const {
+        if (index >= cost_vector.size())
+            throw std::out_of_range("Rule index out of bounds");
+        const auto &ptr = cost_vector[index];
+        if (!ptr)
+            throw std::runtime_error("Null RuleCost pointer");
+        return ptr->getValue();
+    }
+
     std::shared_ptr<RuleCost> &operator[](size_t index) {
         return cost_vector[index];
     }
