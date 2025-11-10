@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Planner.h"
+#include "ScenarioSampling.h"
 #include "StateTree.h"
 #include <functional>
 #include <random>
@@ -39,12 +40,15 @@ class RRTStarPlanner : public Planner<CostType> {
             [](const StateTransition &) { return false; })
         : Planner<CostType>(tree), space(*space), cost_fn(std::move(cost_fn)),
           collision_fn(std::move(collision_fn)) {
-        double dim = space->getDimension();
-        inv_dim = 1.0 / dim;
-        double volume = space->getVolume();
-        double unit_ball_volume = space->getUnitBallVolume();
-        gamma_rrt = 2.0 * std::pow(1.0 + inv_dim, inv_dim) *
-                    std::pow(volume / unit_ball_volume, inv_dim);
+        initializeConstants();
+    }
+
+    // Takes a ScenarioSampling-derived object
+    RRTStarPlanner(
+        const ScenarioSampling<StateSpace, CostType, StateTransition> &scenario)
+        : Planner<CostType>(tree), space(*scenario.getStateSpace()),
+          cost_fn(scenario.costFn()), collision_fn(scenario.collisionFn()) {
+        initializeConstants();
     }
 
     // Initialize the tree with the root state
@@ -100,6 +104,15 @@ class RRTStarPlanner : public Planner<CostType> {
     }
 
   private:
+    void initializeConstants() {
+        double dim = space.getDimension();
+        inv_dim = 1.0 / dim;
+        double volume = space.getVolume();
+        double unit_ball_volume = space.getUnitBallVolume();
+        gamma_rrt = 2.0 * std::pow(1.0 + inv_dim, inv_dim) *
+                    std::pow(volume / unit_ball_volume, inv_dim);
+    }
+
     size_t connectToTree(const State &state) {
         auto nearest_v = tree.nearestVertex(state);
         if (!nearest_v)
