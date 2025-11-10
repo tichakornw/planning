@@ -1,6 +1,9 @@
 #ifndef _PLAN_H
 #define _PLAN_H
 
+#include <ostream>
+#include <vector>
+
 class Plan {
   public:
     Plan() = default;

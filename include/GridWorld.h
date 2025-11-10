@@ -2,6 +2,7 @@
 #define _GRID_WORLD_H
 
 #include <cmath>
+#include <ostream>
 
 class DiscreteProductState2D; // forward declaration
 

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 // Define the hash function for ElementWithCost
 template <typename ElementType, typename CostType> struct ElementWithCost {
