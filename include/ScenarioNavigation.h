@@ -38,16 +38,20 @@ class ScenarioNavigation
     // -------------------------------
     CostFn costFn() const override {
         return [this](const Transition &trans) -> RulebookCost {
-            const Point2D p1 = trans.getStartState();
-            const Point2D p2 = trans.getEndState();
-            RulebookCost cost;
-            cost.setRuleCost(rid_collision, getCollisionCost(p1, p2));
-            cost.setRuleCost(rid_busy, getBusyCost(p1, p2));
-            cost.setRuleCost(rid_clearance, getClearanceCost(p1, p2));
-            cost.setRuleCost(rid_rhr, getRightHandRuleCost(p1, p2));
-            cost.setRuleCost(rid_length, trans.getLength());
-            return cost;
+            return getCost(trans);
         };
+    }
+
+    Cost getCost(const Transition &trans) const {
+        const Point2D p1 = trans.getStartState();
+        const Point2D p2 = trans.getEndState();
+        RulebookCost cost;
+        cost.setRuleCost(rid_collision, getCollisionCost(p1, p2));
+        cost.setRuleCost(rid_busy, getBusyCost(p1, p2));
+        cost.setRuleCost(rid_clearance, getClearanceCost(p1, p2));
+        cost.setRuleCost(rid_rhr, getRightHandRuleCost(p1, p2));
+        cost.setRuleCost(rid_length, trans.getLength());
+        return cost;
     }
 
   private:
