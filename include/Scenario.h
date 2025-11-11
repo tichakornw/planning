@@ -21,6 +21,9 @@ template <typename State> class Scenario {
     Rulebook &getRulebook() { return rulebook; }
     const Rulebook &getRulebook() const { return rulebook; }
 
+    State getInitState() const { return init_state; }
+    State getGoalState() const { return goal_state; }
+
     void setDebug(bool d) { debug = d; }
 
   protected:
