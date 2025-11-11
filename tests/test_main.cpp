@@ -10,6 +10,9 @@
 // From examples/grid.cpp
 void testGrid();
 
+// From examples/navigation.cpp
+void testNavigation();
+
 // From test_navigation.cpp
 void testNavigationCost();
 
@@ -74,6 +77,7 @@ std::string toLower(const std::string &str) {
 
 int main(int argc, char *argv[]) {
     std::vector<NamedTest> test_list = {
+        {"Navigation", testNavigation},
         {"NavigationCost", testNavigationCost},
         {"World2DGeometry", testWorld2DGeometry},
         {"RRTStar", testRRTStar},
