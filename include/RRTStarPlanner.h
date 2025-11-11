@@ -21,45 +21,56 @@ class RRTStarPlanner : public Planner<CostType> {
     using CostFn = std::function<CostType(const StateTransition &)>;
     using CollisionFn = std::function<bool(const StateTransition &)>;
 
+    /// A sentinel value used to mark an invalid vertex ID.
+    static constexpr size_t INVALID_VID = std::numeric_limits<size_t>::max();
+
   private:
     Tree tree;
     const StateSpace &space;
+    const State init_state;
     CostFn cost_fn;
     CollisionFn collision_fn;
 
-    double gamma_rrt;
-    double inv_dim; ///< cached 1.0 / dim
+    double gamma_rrt = 0.0;
+    double inv_dim = 0.0; ///< cached 1.0 / dim
 
-    size_t root_vid = std::numeric_limits<size_t>::max();
-    size_t goal_vid = std::numeric_limits<size_t>::max();
+    size_t root_vid = INVALID_VID;
+    size_t goal_vid = INVALID_VID;
 
   public:
+    /// Construct directly from a state space and function handles
     RRTStarPlanner(
-        const StateSpace *space, CostFn cost_fn,
+        const StateSpace *space, const State &init_state, CostFn cost_fn,
         CollisionFn collision_fn =
             [](const StateTransition &) { return false; })
-        : Planner<CostType>(tree), space(*space), cost_fn(std::move(cost_fn)),
-          collision_fn(std::move(collision_fn)) {
-        initializeConstants();
+        : Planner<CostType>(tree), space(*space), init_state(init_state),
+          cost_fn(std::move(cost_fn)), collision_fn(std::move(collision_fn)) {
+        initialize();
     }
 
-    // Takes a ScenarioSampling-derived object
+    /// Construct from a ScenarioSampling-derived scenario
     RRTStarPlanner(
         const ScenarioSampling<StateSpace, CostType, StateTransition> &scenario)
         : Planner<CostType>(tree), space(*scenario.getStateSpace()),
-          cost_fn(scenario.costFn()), collision_fn(scenario.collisionFn()) {
-        initializeConstants();
+          init_state(scenario.getInitState()), cost_fn(scenario.costFn()),
+          collision_fn(scenario.collisionFn()) {
+        initialize();
     }
 
-    // Initialize the tree with the root state
-    void initialize(const State &start_state) {
-        root_vid = tree.addStateVertex(start_state, true);
+    bool addGoal(const State &goal_state) {
+        goal_vid = connectToTree(goal_state);
+        return goal_vid != INVALID_VID;
+    }
+
+    void reset() {
+        tree.clear();
+        addRoot();
     }
 
     // -------------------------------------------------------
     // Run RRT* for a fixed number of iterations
     // -------------------------------------------------------
-    void run(const State &goal_state, size_t iterations) {
+    void run(size_t iterations) {
         if (root_vid == std::numeric_limits<size_t>::max())
             throw std::runtime_error(
                 "RRTStarPlanner: must call initialize() first");
@@ -72,8 +83,6 @@ class RRTStarPlanner : public Planner<CostType> {
             double neighbor_radius = computeRadius(tree.getNumVertices());
             rewireNeighbors(new_vid, neighbor_radius);
         }
-
-        goal_vid = connectToTree(goal_state);
     }
 
     // -------------------------------------------------------
@@ -82,11 +91,17 @@ class RRTStarPlanner : public Planner<CostType> {
     const Tree &getTree() const { return tree; }
     Tree &getTree() { return tree; }
 
-    size_t getGoalVID() const { return goal_vid; }
     size_t getRootVID() const { return root_vid; }
+    size_t getGoalVID() const { return goal_vid; }
 
-    std::vector<typename Planner<CostType>::WEdgePtr> getOptimalPlan() const {
-        return getOptimalPlan(root_vid, goal_vid);
+    std::vector<SEdgePtr> getOptimalPlan() const {
+        std::vector<SEdgePtr> result;
+        for (const auto &edge : tree.getPath(root_vid, goal_vid)) {
+            // Safe static downcast because StateTransitionEdge derives from
+            // WeightedEdge
+            result.push_back(std::static_pointer_cast<SEdge>(edge));
+        }
+        return result;
     }
 
     std::vector<typename Planner<CostType>::WEdgePtr>
@@ -104,6 +119,13 @@ class RRTStarPlanner : public Planner<CostType> {
     }
 
   private:
+    void initialize() {
+        initializeConstants();
+        addRoot();
+    }
+
+    void addRoot() { root_vid = tree.addStateVertex(init_state, true); }
+
     void initializeConstants() {
         double dim = space.getDimension();
         inv_dim = 1.0 / dim;
@@ -116,11 +138,11 @@ class RRTStarPlanner : public Planner<CostType> {
     size_t connectToTree(const State &state) {
         auto nearest_v = tree.nearestVertex(state);
         if (!nearest_v)
-            return std::numeric_limits<size_t>::max();
+            return INVALID_VID;
 
         StateTransition trans(nearest_v->state, state);
         if (collision_fn(trans))
-            return std::numeric_limits<size_t>::max();
+            return INVALID_VID;
 
         CostType cost = cost_fn(trans);
         size_t new_vid = tree.addStateVertex(trans.getEndState());

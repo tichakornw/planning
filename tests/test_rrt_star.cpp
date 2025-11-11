@@ -9,12 +9,13 @@
 
 // Simple test of RRT* in a small 2D world
 void testRRTStar() {
-    // 1. Define a simple 2D world (no obstacles)
-    World2D world(-1.0, 1.0, -1.0, 1.0);
-
     using State = typename World2D::State;
     using Transition = LinearTransition<State>;
     using Cost = double;
+
+    // 1. Define a simple 2D world (no obstacles)
+    World2D world(-1.0, 1.0, -1.0, 1.0);
+    State start{0.0, 0.0};
 
     // 2. Define cost and collision functions
     auto cost_fn = [](const Transition &tr) { return tr.getLength(); };
@@ -24,25 +25,22 @@ void testRRTStar() {
     };
 
     // 3. Create the planner
-    RRTStarPlanner<World2D, Cost, Transition> planner(&world, cost_fn,
+    RRTStarPlanner<World2D, Cost, Transition> planner(&world, start, cost_fn,
                                                       collision_fn);
 
-    // 4. Initialize tree at origin
-    State start{0.0, 0.0};
-    planner.initialize(start);
-
-    // 5. Run a small number of iterations
+    // 4. Run a small number of iterations
     State goal{0.8, 0.8};
-    planner.run(goal, 200);
+    planner.run(200);
+    planner.addGoal(goal);
 
-    // 6. Get internal tree for inspection
+    // 5. Get internal tree for inspection
     auto &tree = planner.getTree();
 
     size_t num_vertices = tree.getNumVertices();
     std::cout << "Tree has " << num_vertices << " vertices.\n";
     assert(num_vertices > 1);
 
-    // 7. Check that at least one vertex is close to goal
+    // 6. Check that at least one vertex is close to goal
     double best_dist = 1e9;
     for (size_t i = 0; i < num_vertices; ++i) {
         auto v = tree.getStateVertex(i);
@@ -53,7 +51,7 @@ void testRRTStar() {
     std::cout << "Closest vertex to goal is " << best_dist << " away.\n";
     assert(best_dist < 0.5);
 
-    // 8. Check cost propagation: cost of any child > parent's cost
+    // 7. Check cost propagation: cost of any child > parent's cost
     for (size_t i = 0; i < num_vertices; ++i) {
         auto v = tree.getVertex(i);
 
