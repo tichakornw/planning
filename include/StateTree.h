@@ -57,7 +57,7 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
         size_t vid = Base::addStateVertex(state);
         cost_to_come_[vid] =
             is_root ? CostType(0)
-                    : CostType(std::numeric_limits<CostType>::infinity());
+                    : CostType(std::numeric_limits<double>::infinity());
         return vid;
     }
 
@@ -132,7 +132,7 @@ class StateTree : public StateGraph<State, CostType, StateTransition> {
         auto it = cost_to_come_.find(vid);
         return (it != cost_to_come_.end())
                    ? it->second
-                   : std::numeric_limits<CostType>::infinity();
+                   : CostType(std::numeric_limits<double>::infinity());
     }
 
     /** @brief Return true if the vertex is the root (no parent). */

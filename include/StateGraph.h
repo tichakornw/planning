@@ -96,7 +96,7 @@ class StateGraph : public WeightedGraph<CostType> {
     }
 
     SVertexPtr nearestVertex(const State &query) const {
-        CostType best_dist = std::numeric_limits<CostType>::infinity();
+        double best_dist = std::numeric_limits<double>::infinity();
         SVertexPtr best_vertex = nullptr;
 
         for (const auto &[vid, vertex] : this->vertices) {
