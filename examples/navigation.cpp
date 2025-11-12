@@ -1,26 +1,25 @@
-#include <chrono>
-#include <cassert>
-#include <iostream>
 #include "LinearTransition.h"
-#include "World2D.h"
-#include "ScenarioNavigation.h"
 #include "RRTStarPlanner.h"
+#include "ScenarioNavigation.h"
 #include "StateGraph.h"
+#include "World2D.h"
 #include "json_utils.h"
-
+#include <cassert>
+#include <chrono>
+#include <iostream>
 
 // -----------------------------------------------------------------------------
 // Set up the world and scenario, and saves the world JSON
 // -----------------------------------------------------------------------------
-ScenarioNavigation setupNavigationWorld(const std::string &world_filename="")
-{
+ScenarioNavigation
+setupNavigationWorld(const std::string &world_filename = "") {
     using StateSpace = World2D;
     using State = StateSpace::State;
 
     World2D world(-5, 5, -5, 5);
-    world.addObstacle({4.0, 3.0}, 2.0);        // Circular obstacle at origin
+    world.addObstacle({4.0, 3.0}, 2.0); // Circular obstacle at origin
     world.addObstacle({-2.0, -4.0}, 1.0);
-    world.addRegion(0.0, 2.0, -5.0, 1.0);    // Busy region
+    world.addRegion(0.0, 2.0, -5.0, 1.0); // Busy region
 
     State start(-4.0, -4.0);
     State goal(4.0, -4.0);
@@ -38,11 +37,9 @@ ScenarioNavigation setupNavigationWorld(const std::string &world_filename="")
 // -----------------------------------------------------------------------------
 // Run the planner and returns path, tree, and timing
 // -----------------------------------------------------------------------------
-std::pair<RulebookCost, double> runNavigationPlanning(const ScenarioNavigation &scenario,
-                                                      size_t iterations,
-                                                      size_t retry,
-                                                      const std::string &plan_filename="")
-{
+std::pair<RulebookCost, double>
+runNavigationPlanning(const ScenarioNavigation &scenario, size_t iterations,
+                      size_t retry, const std::string &plan_filename = "") {
     using StateSpace = World2D;
     using State = StateSpace::State;
     using Transition = LinearTransition<State>;
@@ -54,7 +51,8 @@ std::pair<RulebookCost, double> runNavigationPlanning(const ScenarioNavigation &
     auto t0 = std::chrono::high_resolution_clock::now();
     planner.run(iterations); // max iterations = 1000
     auto t1 = std::chrono::high_resolution_clock::now();
-    double elapsed_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    double elapsed_ms =
+        std::chrono::duration<double, std::milli>(t1 - t0).count();
     size_t num_trial = 0;
     while (!planner.addGoal(scenario.getGoalState()) && num_trial < retry) {
         t0 = std::chrono::high_resolution_clock::now();
@@ -78,7 +76,9 @@ std::pair<RulebookCost, double> runNavigationPlanning(const ScenarioNavigation &
     std::cout << "  Planning finished in " << elapsed_ms << " ms\n";
     std::cout << "  Path cost: " << total_cost << "\n";
     if (plan_filename.size() > 0)
-        savePlanningResultJson(plan_filename, tree, path, scenario.getInitState(), scenario.getGoalState(), elapsed_ms, total_cost);
+        savePlanningResultJson(plan_filename, tree, path,
+                               scenario.getInitState(), scenario.getGoalState(),
+                               elapsed_ms, total_cost);
 
     return std::make_pair(total_cost, elapsed_ms);
 }
@@ -86,8 +86,7 @@ std::pair<RulebookCost, double> runNavigationPlanning(const ScenarioNavigation &
 // -----------------------------------------------------------------------------
 // Main test function
 // -----------------------------------------------------------------------------
-void testNavigation(size_t iterations, size_t retry)
-{
+void testNavigation(size_t iterations, size_t retry) {
     std::string world_file = "results/world.json";
     std::string plan_file = "results/navigation.json";
 
@@ -97,6 +96,4 @@ void testNavigation(size_t iterations, size_t retry)
         runNavigationPlanning(scenario, iterations, retry, plan_file);
 }
 
-void testNavigation() {
-    testNavigation(1000, 10);
-}
+void testNavigation() { testNavigation(1000, 10); }
