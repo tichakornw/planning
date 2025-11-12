@@ -31,6 +31,7 @@ void testNavigationCost() {
     // 3. Create scenario
     // ----------------------------
     ScenarioNavigation scenario(world, start, goal, clearance);
+    scenario.setup();
 
     std::cout << "ScenarioNavigation created successfully.\n";
     std::cout << "World has " << world.obstacles.size() << " obstacle(s) and "

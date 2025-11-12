@@ -1,6 +1,7 @@
 #include "LinearTransition.h"
 #include "RRTStarPlanner.h"
 #include "ScenarioNavigation.h"
+#include "ScenarioNavigationClassical.h"
 #include "StateGraph.h"
 #include "World2D.h"
 #include "json_utils.h"
@@ -11,8 +12,8 @@
 // -----------------------------------------------------------------------------
 // Set up the world and scenario, and saves the world JSON
 // -----------------------------------------------------------------------------
-ScenarioNavigation
-setupNavigationWorld(const std::string &world_filename = "") {
+template <typename ScenarioType>
+ScenarioType setupNavigationWorldT(const std::string &world_filename) {
     using StateSpace = World2D;
     using State = StateSpace::State;
 
@@ -30,8 +31,19 @@ setupNavigationWorld(const std::string &world_filename = "") {
         saveWorldJson(world_filename, world, clearance);
 
     // Build and return scenario
-    ScenarioNavigation scenario(world, start, goal, clearance);
+    ScenarioType scenario(world, start, goal, clearance);
+    scenario.setup();
     return scenario;
+}
+
+ScenarioNavigation
+setupNavigationWorld(const std::string &world_filename = "") {
+    return setupNavigationWorldT<ScenarioNavigation>(world_filename);
+}
+
+ScenarioNavigationClassical
+setupNavigationWorldClassical(const std::string &world_filename = "") {
+    return setupNavigationWorldT<ScenarioNavigationClassical>(world_filename);
 }
 
 // -----------------------------------------------------------------------------
@@ -86,14 +98,25 @@ runNavigationPlanning(const ScenarioNavigation &scenario, size_t iterations,
 // -----------------------------------------------------------------------------
 // Main test function
 // -----------------------------------------------------------------------------
-void testNavigation(size_t iterations, size_t retry) {
+void testNavigation(size_t iterations, size_t retry, bool classical) {
     std::string world_file = "results/world.json";
-    std::string plan_file = "results/navigation.json";
+    std::string plan_file = "results/navigation";
 
-    auto scenario = setupNavigationWorld(world_file);
+    if (classical)
+        plan_file += "_classical.json";
+    else
+        plan_file += "_rulebook.json";
+
+    std::unique_ptr<ScenarioNavigation> scenario;
+    if (classical)
+        scenario = std::make_unique<ScenarioNavigationClassical>(
+            setupNavigationWorldClassical(world_file));
+    else
+        scenario = std::make_unique<ScenarioNavigation>(
+            setupNavigationWorld(world_file));
 
     const auto &[total_cost, elapsed_ms] =
-        runNavigationPlanning(scenario, iterations, retry, plan_file);
+        runNavigationPlanning(*scenario, iterations, retry, plan_file);
 }
 
-void testNavigation() { testNavigation(1000, 10); }
+void testNavigation() { testNavigation(1000, 10, false); }

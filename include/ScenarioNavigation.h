@@ -21,7 +21,7 @@ class ScenarioNavigation
     using Transition = LinearTransition<State>;
     using Cost = RulebookCost;
 
-  private:
+  protected:
     double clearance;
     size_t rid_collision, rid_busy, rid_clearance, rid_rhr, rid_length;
 
@@ -29,9 +29,7 @@ class ScenarioNavigation
     ScenarioNavigation(const World2D &world, const Point2D &start,
                        const Point2D &goal, double required_clearance)
         : ScenarioSampling<StateSpace, Cost, Transition>(world, start, goal),
-          clearance(required_clearance) {
-        setup();
-    }
+          clearance(required_clearance) {}
 
     // -------------------------------
     // Cost computation
@@ -42,9 +40,9 @@ class ScenarioNavigation
         };
     }
 
-    Cost getCost(const Transition &trans) const {
-        const Point2D p1 = trans.getStartState();
-        const Point2D p2 = trans.getEndState();
+    virtual Cost getCost(const Transition &trans) const {
+        const Point2D &p1 = trans.getStartState();
+        const Point2D &p2 = trans.getEndState();
         RulebookCost cost;
         cost.setRuleCost(rid_collision, getCollisionCost(p1, p2));
         cost.setRuleCost(rid_busy, getBusyCost(p1, p2));
@@ -54,7 +52,7 @@ class ScenarioNavigation
         return cost;
     }
 
-  private:
+  protected:
     // -------------------------------
     // Rulebook setup
     // -------------------------------
@@ -79,7 +77,6 @@ class ScenarioNavigation
         rulebook.addGTRelation(rid_rhr, rid_length);
     }
 
-  private:
     // -------------------------------
     // Individual cost terms
     // -------------------------------

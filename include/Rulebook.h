@@ -81,6 +81,18 @@ class Rulebook {
         return rid;
     }
 
+    void clear() {
+        rules.clear();
+        quotient_rule_set.clear();
+        rule_edges.clear();
+
+        rule_graph.clear();
+        sorted_rule_set.clear();
+        rule_successors.clear();
+
+        is_built = false;
+    }
+
     const Rule &getRule(size_t id) const { return *rules[id]; }
 
     void setEquivalentClasses(
@@ -131,6 +143,9 @@ class Rulebook {
     size_t getNumRules() const { return rules.size(); }
 
     bool build() {
+        if (is_built)
+            std::cerr << "Warning: rulebook is already built!" << std::endl;
+
         if (!isQuotientRuleSetComplete()) {
             throw std::logic_error("Cannot build because the set of equivalent "
                                    "classes is not complete.");

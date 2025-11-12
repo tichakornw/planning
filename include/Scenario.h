@@ -16,6 +16,11 @@ template <typename State> class Scenario {
     virtual ~Scenario() =
         default; // Virtual destructor for proper cleanup of derived classes.
 
+    virtual void setup() {
+        buildRulebook();
+        RulebookCost::setRulebook(rulebook);
+    }
+
     size_t getNumRules() const { return rulebook.getNumRules(); }
 
     Rulebook &getRulebook() { return rulebook; }
@@ -36,12 +41,8 @@ template <typename State> class Scenario {
     // Pure virtual function to be implemented by derived classes.
     virtual void defineRulebook() = 0;
 
-    virtual void setup() {
-        buildRulebook();
-        RulebookCost::setRulebook(rulebook);
-    }
-
     void buildRulebook() {
+        rulebook.clear();
         defineRulebook();
         rulebook.build();
         if (debug)
@@ -64,7 +65,7 @@ template <typename State> class Scenario {
 
         // Successors
         std::cout << "Successors:" << std::endl;
-        for (size_t i = 0; i < 4; ++i) {
+        for (size_t i = 0; i < rulebook.getNumRules(); ++i) {
             std::cout << "    " << i << ": ";
             const auto successors = rulebook.getSuccessors(i);
             for (auto j : successors) {
