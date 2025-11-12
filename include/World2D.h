@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iomanip>
 #include <random>
 #include <vector>
 
@@ -396,4 +397,43 @@ class World2D {
      *
      */
     double getUnitBallVolume() const { return M_PI; }
+
+    /**
+     * @brief Convert world to JSON
+     *
+     */
+    void toJsonStream(std::ostream &os) const {
+        os << std::fixed << std::setprecision(6);
+        os << "{\n";
+
+        // --- Boundaries ---
+        os << "  \"bounds\": {\"xmin\": " << xmin << ", \"xmax\": " << xmax
+           << ", \"ymin\": " << ymin << ", \"ymax\": " << ymax << "},\n";
+
+        // --- Obstacles ---
+        os << "  \"obstacles\": [\n";
+        for (size_t i = 0; i < obstacles.size(); ++i) {
+            const auto &obs = obstacles[i];
+            os << "    {\"x\": " << obs.center.x << ", \"y\": " << obs.center.y
+               << ", \"radius\": " << obs.radius << "}";
+            if (i + 1 < obstacles.size())
+                os << ",";
+            os << "\n";
+        }
+        os << "  ],\n";
+
+        // --- Regions ---
+        os << "  \"regions\": [\n";
+        for (size_t i = 0; i < regions.size(); ++i) {
+            const auto &r = regions[i];
+            os << "    {\"xmin\": " << r.xmin << ", \"xmax\": " << r.xmax
+               << ", \"ymin\": " << r.ymin << ", \"ymax\": " << r.ymax << "}";
+            if (i + 1 < regions.size())
+                os << ",";
+            os << "\n";
+        }
+        os << "  ]\n";
+
+        os << "}";
+    }
 };
