@@ -12,7 +12,7 @@
 // -----------------------------------------------------------------------------
 // Set up the world and scenario, and saves the world JSON
 // -----------------------------------------------------------------------------
-ScenarioNavigation setupNavigationWorld(const std::string &world_filename)
+ScenarioNavigation setupNavigationWorld(const std::string &world_filename="")
 {
     using StateSpace = World2D;
     using State = StateSpace::State;
@@ -27,7 +27,8 @@ ScenarioNavigation setupNavigationWorld(const std::string &world_filename)
     double clearance = 0.5;
 
     // Save world JSON immediately
-    saveWorldJson(world_filename, world, clearance);
+    if (world_filename.size() > 0)
+        saveWorldJson(world_filename, world, clearance);
 
     // Build and return scenario
     ScenarioNavigation scenario(world, start, goal, clearance);
@@ -37,10 +38,10 @@ ScenarioNavigation setupNavigationWorld(const std::string &world_filename)
 // -----------------------------------------------------------------------------
 // Run the planner and returns path, tree, and timing
 // -----------------------------------------------------------------------------
-auto runNavigationPlanning(const ScenarioNavigation &scenario,
-                           size_t iterations,
-                           size_t retry,
-                           const std::string &plan_filename)
+std::pair<RulebookCost, double> runNavigationPlanning(const ScenarioNavigation &scenario,
+                                                      size_t iterations,
+                                                      size_t retry,
+                                                      const std::string &plan_filename="")
 {
     using StateSpace = World2D;
     using State = StateSpace::State;
@@ -74,11 +75,12 @@ auto runNavigationPlanning(const ScenarioNavigation &scenario,
         total_cost = total_cost + scenario.getCost(path[i]->transition);
     }
 
-    std::cout << "Planning finished in " << elapsed_ms << " ms\n";
-    std::cout << "Path cost: " << total_cost << "\n";
-    savePlanningResultJson(plan_filename, tree, path, scenario.getInitState(), scenario.getGoalState(), elapsed_ms, total_cost);
+    std::cout << "  Planning finished in " << elapsed_ms << " ms\n";
+    std::cout << "  Path cost: " << total_cost << "\n";
+    if (plan_filename.size() > 0)
+        savePlanningResultJson(plan_filename, tree, path, scenario.getInitState(), scenario.getGoalState(), elapsed_ms, total_cost);
 
-    return std::tuple(total_cost, elapsed_ms);
+    return std::make_pair(total_cost, elapsed_ms);
 }
 
 // -----------------------------------------------------------------------------
@@ -91,7 +93,7 @@ void testNavigation(size_t iterations, size_t retry)
 
     auto scenario = setupNavigationWorld(world_file);
 
-    const auto &[total_Cost, elapsed_ms] =
+    const auto &[total_cost, elapsed_ms] =
         runNavigationPlanning(scenario, iterations, retry, plan_file);
 }
 
