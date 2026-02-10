@@ -8,15 +8,15 @@ On Ubuntu 22.04 or later, you can follow the steps below to install all the nece
 
 1. Install the compiler
 
-   ```
-   $ sudo apt install cmake build-essential
+   ```bash
+   sudo apt install cmake build-essential
    ```
 
 2. Install this package
 
-   ```
-   $ cd planning
-   $ make all
+   ```bash
+   cd planning
+   make all
    ```
 
    This will create an executables `grid`, `navigation`, `avoidance` and `test` in the `build` folder.
@@ -35,7 +35,7 @@ The grid world example illustrates single-strategy control synthesis for discret
 
 **Run the example:**
 
-```
+```bash
 ./build/grid
 ```
 
@@ -45,7 +45,7 @@ The grid world example illustrates single-strategy control synthesis for discret
 
 **Plot results:**
 
-```
+```bash
 python script/plot_grid.py
 ```
 
@@ -65,22 +65,22 @@ These options can be used independently or together:
 * Running with only `--stats` collects statistics for the rulebook-based RRT\* algorithm.
 
 **Run the default (rulebook-based) RRT\* algorithm:**
-```
+```bash
 ./build/navigation
 ```
 
 **Run the classical RRT\* baseline:**
-```
+```bash
 ./build/navigation --classical
 ```
 
 **Collect statistics for rulebook-based RRT\*:**
-```
+```bash
 ./build/navigation --stats
 ```
 
 **Collect statistics for classical RRT\*:**
-```
+```bash
 ./build/navigation --classical --stats
 ```
 
@@ -104,21 +104,21 @@ with varying sizes. When used, this argument creates a grid world instead of the
 If this argument is provided, the avoidance will execute the specified number of experiments for the given scenario.
 
 **Run the default obstacle avoidance scenario:**
-```
+```bash
 ./build/avoidance
 ```
 
 **Vary the size of grid world:**
-```
+```bash
 ./build/avoidance --random
 ```
 
 **Vary the size of the rulebook:**
-```
+```bash
 ./build/avoidance --random --rule
 ```
 
 ** Specifies the number of experiments to run:**
-```
+```bash
 ./build/avoidance -n 5
 ```
