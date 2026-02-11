@@ -1,6 +1,7 @@
 #ifndef _GRAPH_H
 #define _GRAPH_H
 
+#include <algorithm>
 #include <queue>
 #include <stack>
 #include <unordered_map>
