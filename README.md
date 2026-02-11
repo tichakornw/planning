@@ -92,6 +92,15 @@ Without `--stats`
 With `--stats`
 * `results/navigation_stats_<alg>.json`: Runtime and cost statistics over multiple runs
 
+**Plot results:**
+
+```bash
+python script/plot_navigation_stats.py results/navigation_stats_rulebook.json 
+```
+
+```bash
+python script/plot_navigation.py results/navigation_classical.json results/world.json 
+```
 
 ### Obstacle Avoidance Example
 The obstacle avoidance example illustrates complete control synthesis.
