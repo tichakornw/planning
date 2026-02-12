@@ -1,3 +1,7 @@
 tmp
-build
 results
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
