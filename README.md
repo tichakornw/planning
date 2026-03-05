@@ -22,7 +22,7 @@ On Ubuntu 22.04 or later, you can follow the steps below to install all the nece
    make all
    ```
 
-   This will create the executables `grid`, `navigation`,  <!--`avoidance`--> and `test` in the `build` folder. 
+   This will create the executables `grid`, `navigation`,  <!--`avoidance`--> and `test_suite` in the `build` folder. 
 
 ## Usage
 The repository includes <!--three-->two main example scenarios that demonstrate different planning algorithms:
