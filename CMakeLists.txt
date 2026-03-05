@@ -1,36 +1,47 @@
 cmake_minimum_required(VERSION 3.16)
-project(planning LANGUAGES CXX)
-
+project(MotionPlanningRulebooks LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "-Wall -g")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Directories
-set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
-set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
-set(EXAMPLES_DIR ${CMAKE_SOURCE_DIR}/examples)
-set(TESTS_DIR ${CMAKE_SOURCE_DIR}/tests)
+add_compile_options(-Wall -Wextra)
 
-include_directories(${INCLUDE_DIR})
+# Core Library Setup
+file(GLOB SRC_FILES "src/*.cpp")
+list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
-# Main executable
-file(GLOB SRC_FILES ${SRC_DIR}/*.cpp)
-add_executable(planner ${SRC_FILES})
+add_library(core_lib STATIC ${SRC_FILES})
+target_include_directories(core_lib PUBLIC include)
+target_link_libraries(core_lib PUBLIC m)
 
-# Example executables
-file(GLOB EXAMPLE_MAIN_SRC ${EXAMPLES_DIR}/main_*.cpp)
-file(GLOB EXAMPLE_HELPER_SRC ${EXAMPLES_DIR}/*.cpp)
-list(REMOVE_ITEM EXAMPLE_HELPER_SRC ${EXAMPLE_MAIN_SRC})
+# Main Executable
+add_executable(planner src/main.cpp)
+target_link_libraries(planner PRIVATE core_lib)
 
-foreach(EXAMPLE ${EXAMPLE_MAIN_SRC})
-    get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WE)
-    add_executable(${EXAMPLE_NAME} ${EXAMPLE} ${EXAMPLE_HELPER_SRC} ${SRC_FILES})
-    target_include_directories(${EXAMPLE_NAME} PRIVATE ${INCLUDE_DIR})
-endforeach()
+# Example Helpers
+file(GLOB EXAMPLE_ALL "examples/*.cpp")
+file(GLOB EXAMPLE_MAINS "examples/main_*.cpp")
+set(EXAMPLE_HELPERS ${EXAMPLE_ALL})
+if(EXAMPLE_MAINS)
+    list(REMOVE_ITEM EXAMPLE_HELPERS ${EXAMPLE_MAINS})
+endif()
 
-# Test executable
-file(GLOB TEST_SRC ${TESTS_DIR}/*.cpp)
-add_executable(test ${TEST_SRC} ${EXAMPLE_HELPER_SRC} ${SRC_FILES})
-target_include_directories(test PRIVATE ${INCLUDE_DIR})
+add_library(example_helpers STATIC ${EXAMPLE_HELPERS})
+target_include_directories(example_helpers PUBLIC include examples)
+target_link_libraries(example_helpers PUBLIC core_lib)
 
-# Clean target
-add_custom_target(clean-all COMMAND ${CMAKE_COMMAND} -E rm -rf ${BUILD_DIR} ${TMP_DIR})
+# Example Executables
+# Grid Example
+add_executable(grid examples/main_grid.cpp)
+target_link_libraries(grid PRIVATE example_helpers)
+
+# Navigation Example
+add_executable(navigation examples/main_navigation.cpp)
+target_link_libraries(navigation PRIVATE example_helpers)
+
+# Test Executable
+file(GLOB TEST_SRC "tests/*.cpp")
+
+add_executable(test_suite ${TEST_SRC})
+target_include_directories(test_suite PRIVATE include tests examples)
+target_link_libraries(test_suite PRIVATE example_helpers)
