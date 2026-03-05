@@ -11,22 +11,25 @@ On Ubuntu 22.04 or later, you can follow the steps below to install all the nece
    ```bash
    sudo apt install cmake build-essential
    ```
-
-2. Install this package
+2. Install Matplotlib
+   ```bash
+   sudo apt install python3-matplotlib
+   ```
+3. Install this package
 
    ```bash
    cd planning
    make all
    ```
 
-   This will create an executables `grid`, `navigation`, `avoidance` and `test` in the `build` folder.
+   This will create the executables `grid`, `navigation`,  <!--`avoidance`--> and `test` in the `build` folder. 
 
 ## Usage
-The repository includes three main example scenarios that demonstrate different planning algorithms:
+The repository includes <!--three-->two main example scenarios that demonstrate different planning algorithms:
 
 1. Grid World Example
 2. Navigation Example
-3. Obstacle Avoidance Example
+<!-- 3. Obstacle Avoidance Example -->
 
 Each executable corresponds to one of these experiments.
 
@@ -46,7 +49,7 @@ The grid world example illustrates single-strategy control synthesis for discret
 **Plot results:**
 
 ```bash
-python script/plot_grid.py
+python3 script/plot_grid.py
 ```
 
 This script visualizes the performance comparison between the two algorithms.
@@ -95,13 +98,13 @@ With `--stats`
 **Plot results:**
 
 ```bash
-python script/plot_navigation_stats.py results/navigation_stats_rulebook.json 
+python3 script/plot_navigation_stats.py results/navigation_stats_rulebook.json 
 ```
 
 ```bash
-python script/plot_navigation.py results/navigation_classical.json results/world.json 
+python3 script/plot_navigation.py results/navigation_classical.json results/world.json 
 ```
-
+<!--
 ### Obstacle Avoidance Example
 The obstacle avoidance example illustrates complete control synthesis.
 
@@ -131,3 +134,4 @@ If this argument is provided, the avoidance will execute the specified number of
 ```bash
 ./build/avoidance -n 5
 ```
+-->
