@@ -30,16 +30,19 @@ add_library(example_helpers STATIC ${EXAMPLE_HELPERS})
 target_include_directories(example_helpers PUBLIC include examples)
 target_link_libraries(example_helpers PUBLIC core_lib)
 
-# Example Executables
-# Grid Example
-add_executable(grid examples/main_grid.cpp)
-target_link_libraries(grid PRIVATE example_helpers)
+add_custom_target(examples)
 
-# Navigation Example
-add_executable(navigation examples/main_navigation.cpp)
-target_link_libraries(navigation PRIVATE example_helpers)
+foreach(EXAMPLE_MAIN IN LISTS EXAMPLE_MAINS)
+    get_filename_component(FILE_NAME ${EXAMPLE_MAIN} NAME_WE) 
+    
+    string(REPLACE "main_" "" TARGET_NAME ${FILE_NAME}) 
 
-# Test Executable
+    add_executable(${TARGET_NAME} ${EXAMPLE_MAIN})
+    target_link_libraries(${TARGET_NAME} PRIVATE example_helpers)
+    
+    add_dependencies(examples ${TARGET_NAME})
+endforeach()
+
 file(GLOB TEST_SRC "tests/*.cpp")
 
 add_executable(test_suite ${TEST_SRC})
