@@ -156,7 +156,7 @@ def plot_rrtstar_result(result_file: str, world_file: str, show=True, save_as=No
     handles.append(shadow_patch)
     labels.append("Right-hand clearance zone")
     unique = dict(zip(labels, handles))  # remove duplicate legend items
-    ax.legend(unique.values(), unique.keys(), loc="upper left")
+    ax.legend(unique.values(), unique.keys(), loc="upper left", fontsize=14)
     ax.grid(True, linestyle="--", alpha=0.5)
 
     if save_as:

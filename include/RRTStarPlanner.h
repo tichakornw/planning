@@ -27,7 +27,7 @@ class RRTStarPlanner : public Planner<CostType> {
   private:
     Tree tree;
     const StateSpace &space;
-    const State init_state;
+    State init_state;
     CostFn cost_fn;
     CollisionFn collision_fn;
 
@@ -55,6 +55,10 @@ class RRTStarPlanner : public Planner<CostType> {
           init_state(scenario.getInitState()), cost_fn(scenario.costFn()),
           collision_fn(scenario.collisionFn()) {
         initialize();
+    }
+
+    void setInitState(const State &init_state) {
+        this->init_state = init_state;
     }
 
     bool addGoal(const State &goal_state) {
