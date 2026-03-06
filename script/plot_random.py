@@ -70,11 +70,12 @@ def plot_results(results_time, xlabel):
             label=f"x={x}",
         )
 
-    plt.xlabel(xlabel, size=40)
-    plt.ylabel("Computation time (seconds)", size=40)
+    plt.xlabel(xlabel, size=50)
+    plt.ylabel("Computation time (s)", size=50)
     plt.yscale("log")
-    plt.tick_params(axis="x", labelsize=40)
-    plt.tick_params(axis="y", labelsize=40)
+    plt.tick_params(axis="x", labelsize=50)
+    plt.tick_params(axis="y", labelsize=50)
+    plt.tight_layout(pad=2.0)
 
 
 if __name__ == "__main__":
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "result_file",
         nargs="?",  # make it optional
-        default="results/result_random_rule.json",  # default file
+        default="results_paper/result_random_rule.json",  # default file
         help="Path to the statistics JSON file (default: %(default)s)",
     )
     args = parser.parse_args()

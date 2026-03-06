@@ -44,20 +44,29 @@ def plot_navigation_stats(filename: str, show=True, save_prefix=None):
     cost_stds = np.array(cost_stds)
 
     # --- Plot elapsed time ---
-    fig1, ax1 = plt.subplots(figsize=(6, 4))
+    fig1, ax1 = plt.subplots(figsize=(6, 3))
     ax1.set_xscale("log")
     ax1.set_xlim(50, max(iteration_values) * 1.2)
-    ax1.errorbar(iteration_values, elapsed_mean, yerr=elapsed_std, fmt="-o", capsize=4)
-    ax1.set_xlabel("Iterations", fontsize=20)
-    ax1.set_ylabel("Computation time (s)", fontsize=20)
-    ax1.tick_params(axis="both", which="major", labelsize=16)
+    ax1.errorbar(
+        iteration_values,
+        elapsed_mean,
+        yerr=elapsed_std,
+        fmt="-o",
+        capsize=4,
+        linewidth=5,
+        markersize=15,
+        markeredgewidth=5
+    )
+    ax1.set_xlabel("Iterations", fontsize=45)
+    ax1.set_ylabel("Computation time (s)", fontsize=45)
+    ax1.tick_params(axis="both", which="major", labelsize=40)
     ax1.grid(True, linestyle="--", alpha=0.5)
 
     if save_prefix:
         fig1.savefig(f"{save_prefix}_time.png", bbox_inches="tight")
 
     # --- Plot path cost components ---
-    fig2, ax2 = plt.subplots(figsize=(7, 5))
+    fig2, ax2 = plt.subplots(figsize=(6, 3))
     ax2.set_xscale("log")
     ax2.set_xlim(50, max(iteration_values) * 1.2)
     num_components = cost_means.shape[1]
@@ -72,17 +81,20 @@ def plot_navigation_stats(filename: str, show=True, save_prefix=None):
             yerr=cost_stds[:, j],
             fmt="-o",
             capsize=4,
+            linewidth=5,
+            markersize=15,
+            markeredgewidth=5,
             label=label,
         )
 
-    ax2.set_xlabel("Iterations", fontsize=20)
-    ax2.set_ylabel("Path cost", fontsize=20)
+    ax2.set_xlabel("Iterations", fontsize=45)
+    ax2.set_ylabel("Path cost", fontsize=45)
     _, ymax = ax2.get_ylim()
     ax2.set_ylim(0, ymax)
-    ax2.tick_params(axis="both", which="major", labelsize=16)
+    ax2.tick_params(axis="both", which="major", labelsize=40)
     ax2.grid(True, linestyle="--", alpha=0.5)
     if num_components > 1:
-        ax2.legend(fontsize=16)
+        ax2.legend(fontsize=40)
 
     if save_prefix:
         fig2.savefig(f"{save_prefix}_costs.png", bbox_inches="tight")
