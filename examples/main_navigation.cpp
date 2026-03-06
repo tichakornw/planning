@@ -130,5 +130,5 @@ int main(int argc, char *argv[]) {
     if (args.get_stats)
         collectStats(args.classical);
     else
-        testNavigation(1000, 10, args.classical);
+        testNavigation(2000, 10, args.classical);
 }

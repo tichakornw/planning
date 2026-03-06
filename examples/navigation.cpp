@@ -20,7 +20,7 @@ ScenarioType setupNavigationWorldT(const std::string &world_filename) {
     World2D world(-5, 5, -5, 5);
     world.addObstacle({4.0, 3.0}, 2.0); // Circular obstacle at origin
     world.addObstacle({-2.0, -4.0}, 1.0);
-    world.addRegion(0.0, 2.0, -5.0, 1.0); // Busy region
+    world.addRegion(0.0, 3.0, -5.0, 1.0); // Busy region
 
     State start(-4.0, -4.0);
     State goal(4.0, -4.0);
