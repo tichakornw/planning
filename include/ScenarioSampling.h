@@ -10,7 +10,7 @@ class ScenarioSampling : public Scenario<typename StateSpace::State> {
     using CollisionFn = std::function<bool(const StateTransition &)>;
 
   protected:
-    StateSpace space;
+    const StateSpace space;
 
   public:
     ScenarioSampling() = default;
