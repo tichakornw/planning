@@ -77,6 +77,15 @@ std::map<size_t, std::vector<size_t>> testGridPlanner(
 
 void writeJson(const std::map<size_t, std::vector<size_t>> &data,
                const std::string &filename) {
+    // Ensure results directory exists
+    size_t last_slash = filename.find_last_of("/");
+    if (last_slash != std::string::npos) {
+        std::string dir = filename.substr(0, last_slash);
+        // Use system call to create directory if it doesn't exist
+        std::string mkdir_cmd = "mkdir -p '" + dir + "'";
+        int ret = system(mkdir_cmd.c_str());
+        (void)ret; // suppress unused warning
+    }
     std::ofstream out(filename);
     out << "{\n";
 

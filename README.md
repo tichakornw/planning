@@ -8,18 +8,21 @@ On Ubuntu 22.04 or later, you can follow the steps below to install all the nece
 
 1. Install the compiler
 
+   ```bash
+   sudo apt install cmake build-essential
    ```
-   $ sudo apt install cmake build-essential
+2. Install Matplotlib
+   ```bash
+   sudo apt install python3-matplotlib
+   ```
+3. Install this package
+
+   ```bash
+   cd planning
+   make all
    ```
 
-2. Install this package
-
-   ```
-   $ cd planning
-   $ make all
-   ```
-
-   This will create an executables `grid`, `navigation`, `avoidance` and `test` in the `build` folder.
+   This will create the executables `grid`, `navigation`,  `avoidance` and `test_suite` in the `build` folder. 
 
 ## Usage
 The repository includes three main example scenarios that demonstrate different planning algorithms:
@@ -35,7 +38,7 @@ The grid world example illustrates single-strategy control synthesis for discret
 
 **Run the example:**
 
-```
+```bash
 ./build/grid
 ```
 
@@ -45,8 +48,8 @@ The grid world example illustrates single-strategy control synthesis for discret
 
 **Plot results:**
 
-```
-python script/plot_grid.py
+```bash
+python3 script/plot_grid.py
 ```
 
 This script visualizes the performance comparison between the two algorithms.
@@ -65,22 +68,22 @@ These options can be used independently or together:
 * Running with only `--stats` collects statistics for the rulebook-based RRT\* algorithm.
 
 **Run the default (rulebook-based) RRT\* algorithm:**
-```
+```bash
 ./build/navigation
 ```
 
 **Run the classical RRT\* baseline:**
-```
+```bash
 ./build/navigation --classical
 ```
 
 **Collect statistics for rulebook-based RRT\*:**
-```
+```bash
 ./build/navigation --stats
 ```
 
 **Collect statistics for classical RRT\*:**
-```
+```bash
 ./build/navigation --classical --stats
 ```
 
@@ -92,6 +95,15 @@ Without `--stats`
 With `--stats`
 * `results/navigation_stats_<alg>.json`: Runtime and cost statistics over multiple runs
 
+**Plot results:**
+
+```bash
+python3 script/plot_navigation_stats.py results/navigation_stats_rulebook.json 
+```
+
+```bash
+python3 script/plot_navigation.py results/navigation_classical.json results/world.json 
+```
 
 ### Obstacle Avoidance Example
 The obstacle avoidance example illustrates complete control synthesis.
@@ -104,21 +116,21 @@ with varying sizes. When used, this argument creates a grid world instead of the
 If this argument is provided, the avoidance will execute the specified number of experiments for the given scenario.
 
 **Run the default obstacle avoidance scenario:**
-```
+```bash
 ./build/avoidance
 ```
 
 **Vary the size of grid world:**
-```
+```bash
 ./build/avoidance --random
 ```
 
 **Vary the size of the rulebook:**
-```
+```bash
 ./build/avoidance --random --rule
 ```
 
 ** Specifies the number of experiments to run:**
-```
+```bash
 ./build/avoidance -n 5
 ```
